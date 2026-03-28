@@ -80,7 +80,6 @@ class TeamService {
     const body = await response.json();
     return body.data as Team;
   }
-}
 
   async assignEmcee(token: string, teamId: number, userId: number): Promise<{ team_id: number; emcee_id: number; emcee_email: string }> {
     const response = await fetch(`${this.baseURL}/teams/${teamId}/emcee_assignment`, {
