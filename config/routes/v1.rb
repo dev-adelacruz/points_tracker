@@ -6,4 +6,6 @@ namespace :v1 do
   resources :users, only: [] do
     resource :role, only: [ :update ], module: "users"
   end
+
+  resources :teams, only: [ :index ]
 end

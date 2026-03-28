@@ -9,6 +9,9 @@ class User < ApplicationRecord
     :recoverable, :rememberable, :validatable,
     :jwt_authenticatable, jwt_revocation_strategy: self
 
+  has_many :team_memberships, dependent: :destroy
+  has_many :teams, through: :team_memberships
+
   enum :role, { admin: 0, emcee: 1, host: 2 }, validate: true
 
   validates :email, presence: true
