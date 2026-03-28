@@ -1,16 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
 import { hostService } from '../../services/hostService';
+import { hostCoinHistoryService } from '../../services/hostCoinHistoryService';
 import type { Host } from '../../interfaces/host';
+import type { HostCoinHistoryEntry } from '../../interfaces/hostCoinHistory';
+
+type Preset = 'today' | 'week' | 'month' | 'all';
+
+const formatCoins = (n: number) => n.toLocaleString();
+
+const today = () => new Date().toISOString().split('T')[0];
+const startOf = (unit: 'week' | 'month'): string => {
+  const d = new Date();
+  if (unit === 'week') {
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+  } else {
+    d.setDate(1);
+  }
+  return d.toISOString().split('T')[0];
+};
+
+const presetRange = (preset: Preset): { date_from?: string; date_to?: string } => {
+  if (preset === 'today') return { date_from: today(), date_to: today() };
+  if (preset === 'week') return { date_from: startOf('week'), date_to: today() };
+  if (preset === 'month') return { date_from: startOf('month'), date_to: today() };
+  return {};
+};
 
 const HostDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const [hosts, setHosts] = useState<Host[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hostsLoading, setHostsLoading] = useState(true);
+  const [hostsError, setHostsError] = useState<string | null>(null);
+
+  const [history, setHistory] = useState<HostCoinHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [preset, setPreset] = useState<Preset>('month');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+  const [showCustom, setShowCustom] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -18,9 +51,45 @@ const HostDashboard: React.FC = () => {
     hostService
       .getHosts(token)
       .then(setHosts)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setIsLoading(false));
+      .catch((err: Error) => setHostsError(err.message))
+      .finally(() => setHostsLoading(false));
   }, [token]);
+
+  const loadHistory = useCallback((filters: { date_from?: string; date_to?: string }) => {
+    if (!token) return;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    hostCoinHistoryService
+      .getCoinHistory(token, filters)
+      .then(setHistory)
+      .catch((err: Error) => setHistoryError(err.message))
+      .finally(() => setHistoryLoading(false));
+  }, [token]);
+
+  useEffect(() => {
+    if (!showCustom) loadHistory(presetRange(preset));
+  }, [preset, showCustom, loadHistory]);
+
+  const applyCustom = () => {
+    loadHistory({ date_from: customFrom || undefined, date_to: customTo || undefined });
+  };
+
+  // Group by date
+  const grouped = useMemo(() => {
+    const map: Record<string, HostCoinHistoryEntry[]> = {};
+    history.forEach((entry) => {
+      if (!map[entry.session_date]) map[entry.session_date] = [];
+      map[entry.session_date].push(entry);
+    });
+    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
+  }, [history]);
+
+  const presets: { key: Preset; label: string }[] = [
+    { key: 'today', label: 'Today' },
+    { key: 'week', label: 'This Week' },
+    { key: 'month', label: 'This Month' },
+    { key: 'all', label: 'All Time' },
+  ];
 
   return (
     <DashboardLayout title="Dashboard">
@@ -38,6 +107,96 @@ const HostDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Coin History */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">Coin History</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Your earnings by session, grouped by day.</p>
+        </div>
+
+        {/* Filter bar */}
+        <div className="px-6 py-3 border-b border-slate-100 flex flex-wrap items-center gap-2">
+          {presets.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setPreset(key); setShowCustom(false); }}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${!showCustom && preset === key ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 border border-slate-200 hover:bg-slate-50'}`}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowCustom((v) => !v)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${showCustom ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 border border-slate-200 hover:bg-slate-50'}`}
+          >
+            Custom
+          </button>
+          {showCustom && (
+            <>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <span className="text-xs text-slate-400">to</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              />
+              <button
+                onClick={applyCustom}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+              >
+                Apply
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className="p-6">
+          {historyLoading && <p className="text-sm text-slate-400">Loading...</p>}
+          {historyError && <p className="text-sm text-red-500">{historyError}</p>}
+          {!historyLoading && !historyError && grouped.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-sm font-medium text-slate-500">No sessions logged yet</p>
+              <p className="text-xs text-slate-400 mt-1">Your coin earnings will appear here once a session is recorded.</p>
+            </div>
+          )}
+          {!historyLoading && !historyError && grouped.length > 0 && (
+            <div className="space-y-5">
+              {grouped.map(([date, entries]) => {
+                const dailyTotal = entries.reduce((sum, e) => sum + e.coins, 0);
+                return (
+                  <div key={date}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{date}</p>
+                      <p className="text-xs font-bold text-teal-700">{formatCoins(dailyTotal)} coins</p>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {entries.map((entry) => (
+                        <li key={entry.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-800">
+                              {entry.session_slot === 'first' ? '1st' : '2nd'} Session
+                            </p>
+                            <p className="text-xs text-slate-400">{entry.team_name}</p>
+                          </div>
+                          <p className="text-sm font-bold text-slate-800 shrink-0">{formatCoins(entry.coins)}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Company Leaderboard */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
           <h2 className="text-sm font-bold text-slate-900">Company Leaderboard</h2>
@@ -45,12 +204,12 @@ const HostDashboard: React.FC = () => {
         </div>
 
         <div className="p-6">
-          {isLoading && <p className="text-sm text-slate-400">Loading leaderboard...</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {!isLoading && !error && hosts.length === 0 && (
+          {hostsLoading && <p className="text-sm text-slate-400">Loading leaderboard...</p>}
+          {hostsError && <p className="text-sm text-red-500">{hostsError}</p>}
+          {!hostsLoading && !hostsError && hosts.length === 0 && (
             <p className="text-sm text-slate-400">No hosts found.</p>
           )}
-          {!isLoading && !error && hosts.length > 0 && (
+          {!hostsLoading && !hostsError && hosts.length > 0 && (
             <ul className="space-y-2">
               {hosts.map((host, index) => {
                 const isMe = host.id === currentUser?.id;
