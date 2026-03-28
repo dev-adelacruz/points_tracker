@@ -23,6 +23,8 @@ namespace :v1 do
     get "leaderboard_rank", to: "leaderboard_rank#show"
   end
 
+  get "leaderboard", to: "leaderboard#index"
+
   resources :sessions, only: [ :index, :show, :create, :update, :destroy ] do
     resources :coin_entries, only: [ :index, :create, :update ], module: "sessions"
   end

@@ -7,6 +7,7 @@ import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import AdminDashboard from '../pages/admin';
 import EmceeDashboard from '../pages/emcee';
 import HostDashboard from '../pages/host';
+import LeaderboardPage from '../pages/leaderboard';
 import LoginPage from '../pages/login';
 
 const RoleRedirect: React.FC = () => {
@@ -60,6 +61,15 @@ const AppRoutes: React.FC = () => {
             <RoleProtectedRoute allowedRoles={['host']}>
               <HostDashboard />
             </RoleProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <LeaderboardPage />
+            </ProtectedRoute>
           }
         />
 

@@ -1,16 +1,22 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
 import {
   LayoutDashboard, User, Settings, LogOut, Bell,
-  ChevronDown, Zap, Menu, X,
+  ChevronDown, Zap, Menu, X, Trophy,
 } from 'lucide-react';
 
+const ROLE_HOME: Record<string, string> = {
+  admin: '/admin',
+  emcee: '/emcee',
+  host: '/host',
+};
+
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Profile', icon: User },
-  { label: 'Settings', icon: Settings },
+  { label: 'Dashboard', icon: LayoutDashboard, path: null },
+  { label: 'Leaderboard', icon: Trophy, path: '/leaderboard' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,12 +32,24 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title = 'Dashboard' }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector((state: RootState) => state.user.user);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => { dispatch(logoutUser() as any); };
+
+  const handleNavClick = (item: typeof NAV_ITEMS[0]) => {
+    setSidebarOpen(false);
+    if (item.path) {
+      navigate(item.path);
+    } else {
+      const home = ROLE_HOME[user?.role ?? ''];
+      if (home) navigate(home);
+    }
+  };
 
   const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : 'U';
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : '';
@@ -70,11 +88,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title = 'Da
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ label, icon: Icon }) => {
-            const active = label === title;
+          {NAV_ITEMS.map((item) => {
+            const { label, icon: Icon } = item;
+            const active = item.path ? location.pathname === item.path : label === title;
             return (
               <button
                 key={label}
+                onClick={() => handleNavClick(item)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 text-left border-l-2 pl-[10px] ${active ? 'bg-teal-600/15 text-teal-400 border-teal-500' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100 border-transparent'}`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
