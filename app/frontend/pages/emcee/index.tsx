@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -6,10 +6,14 @@ import { teamService } from '../../services/teamService';
 import { hostService } from '../../services/hostService';
 import { sessionService } from '../../services/sessionService';
 import { coinEntryService } from '../../services/coinEntryService';
+import { teamSessionService } from '../../services/teamSessionService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { CoinEntry } from '../../interfaces/coinEntry';
+import type { TeamSession } from '../../interfaces/teamSession';
+
+const formatCoins = (n: number) => n.toLocaleString();
 
 const EmceeDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -37,6 +41,12 @@ const EmceeDashboard: React.FC = () => {
   const [coinError, setCoinError] = useState<string | null>(null);
   const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
+  const [teamSessions, setTeamSessions] = useState<TeamSession[]>([]);
+  const [teamSessionsLoading, setTeamSessionsLoading] = useState(true);
+  const [teamSessionsError, setTeamSessionsError] = useState<string | null>(null);
+  const [tsPreset, setTsPreset] = useState<'today' | 'week' | 'month' | 'all'>('month');
+  const [expandedSessionId, setExpandedSessionId] = useState<number | null>(null);
+
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -51,6 +61,33 @@ const EmceeDashboard: React.FC = () => {
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [token]);
+
+  const tsPresetRange = useMemo(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const fmt = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const todayStr = fmt(d);
+    if (tsPreset === 'today') return { date_from: todayStr, date_to: todayStr };
+    if (tsPreset === 'week') {
+      const w = new Date(d); w.setDate(d.getDate() - d.getDay());
+      return { date_from: fmt(w), date_to: todayStr };
+    }
+    if (tsPreset === 'month') {
+      const m = new Date(d.getFullYear(), d.getMonth(), 1);
+      return { date_from: fmt(m), date_to: todayStr };
+    }
+    return {};
+  }, [tsPreset]);
+
+  useEffect(() => {
+    if (!token) return;
+    setTeamSessionsLoading(true);
+    setTeamSessionsError(null);
+    teamSessionService.getTeamSessions(token, tsPresetRange)
+      .then(setTeamSessions)
+      .catch((e: Error) => setTeamSessionsError(e.message))
+      .finally(() => setTeamSessionsLoading(false));
+  }, [token, tsPresetRange]);
 
   const openModal = () => {
     setShowModal(true);
@@ -388,6 +425,85 @@ const EmceeDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Team Session Performance */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">Team Session Performance</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Coin totals and host breakdown for your teams.</p>
+        </div>
+
+        {/* Preset filter */}
+        <div className="px-6 pt-4 pb-0 flex gap-2">
+          {(['today', 'week', 'month', 'all'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setTsPreset(p)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all duration-150 ${
+                tsPreset === p
+                  ? 'bg-teal-600 border-teal-600 text-white'
+                  : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {p === 'today' ? 'Today' : p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6">
+          {teamSessionsLoading && <p className="text-sm text-slate-400">Loading...</p>}
+          {teamSessionsError && <p className="text-sm text-red-500">{teamSessionsError}</p>}
+          {!teamSessionsLoading && !teamSessionsError && teamSessions.length === 0 && (
+            <p className="text-sm text-slate-400">No sessions found for this period.</p>
+          )}
+          {!teamSessionsLoading && !teamSessionsError && teamSessions.length > 0 && (
+            <ul className="space-y-2">
+              {teamSessions.map((ts) => (
+                <li key={ts.id} className="rounded-xl border border-slate-100 overflow-hidden">
+                  <button
+                    className="w-full flex items-center gap-3 bg-slate-50 px-4 py-3 text-left hover:bg-slate-100 transition-colors"
+                    onClick={() => setExpandedSessionId(expandedSessionId === ts.id ? null : ts.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {ts.date} — {ts.session_slot === 'first' ? '1st' : '2nd'} Session
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {ts.team_name}
+                        {ts.top_earner_email && (
+                          <> · Top: {ts.top_earner_email} ({formatCoins(ts.top_earner_coins!)})</>
+                        )}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-teal-700 shrink-0">{formatCoins(ts.total_coins)}</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${expandedSessionId === ts.id ? 'rotate-180' : ''}`}
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {expandedSessionId === ts.id && (
+                    <div className="border-t border-slate-100 divide-y divide-slate-50">
+                      {ts.host_breakdown.map((host) => (
+                        <div key={host.user_id} className="flex items-center gap-3 px-4 py-2.5">
+                          <span className="text-xs text-slate-600 flex-1 truncate">{host.email}</span>
+                          {host.is_guest && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 shrink-0">Guest</span>
+                          )}
+                          <span className="text-xs font-semibold text-slate-800 shrink-0">{formatCoins(host.coins)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* Coin Entry Modal */}
       {showCoinModal && coinSession && (
         <div
