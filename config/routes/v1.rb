@@ -8,4 +8,5 @@ namespace :v1 do
   end
 
   resources :teams, only: [ :index ]
+  resources :hosts, only: [ :index, :show ]
 end
