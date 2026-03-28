@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 FactoryBot.define do
-  factory :team do
-    name { Faker::Team.name }
-    description { nil }
+  factory :team_emcee_assignment do
+    team
+    association :user, factory: [ :user, :emcee ]
     active { true }
 
     trait :inactive do
