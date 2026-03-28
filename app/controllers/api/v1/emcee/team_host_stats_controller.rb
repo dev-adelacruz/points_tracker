@@ -26,10 +26,16 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
     coins_by_user = entries_scope.group(:user_id).sum(:coins)
     sessions_by_user = entries_scope.group(:user_id).count
 
+    today = Date.current
+    days_elapsed = today.day
+    total_days = today.end_of_month.day
+
     host_stats = hosts.map do |host|
       total_coins = coins_by_user[host.id] || 0
       quota = host.monthly_coin_quota
       quota_progress = quota > 0 ? (total_coins.to_f / quota * 100).round(1) : 0.0
+      paced = days_elapsed > 0 ? ((total_coins.to_f / days_elapsed) * total_days).round : 0
+      on_track = quota > 0 ? paced >= quota : nil
 
       {
         user_id: host.id,
@@ -37,9 +43,11 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
         total_coins: total_coins,
         monthly_coin_quota: quota,
         quota_progress: quota_progress,
-        sessions_attended: sessions_by_user[host.id] || 0
+        sessions_attended: sessions_by_user[host.id] || 0,
+        paced_monthly_coins: paced,
+        on_track: on_track
       }
-    end.sort_by { |h| -h[:total_coins] }
+    end.sort_by { |h| [ h[:on_track] == false ? 0 : 1, -h[:total_coins] ] }
 
     render json: {
       status: { code: 200, message: "Team host stats retrieved successfully." },
