@@ -5,9 +5,11 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { teamService } from '../../services/teamService';
 import { hostService } from '../../services/hostService';
 import { emceeService } from '../../services/emceeService';
+import { sessionService } from '../../services/sessionService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Emcee } from '../../interfaces/emcee';
+import type { Session } from '../../interfaces/session';
 
 type Tab = 'teams' | 'hosts' | 'emcees' | 'sessions';
 
@@ -150,12 +152,45 @@ const AdminDashboard: React.FC = () => {
   const [assignError, setAssignError] = useState<string | null>(null);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
 
+  // Sessions state
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [filterTeamId, setFilterTeamId] = useState('');
+  const [filterEmceeId, setFilterEmceeId] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [sessionFormDate, setSessionFormDate] = useState('');
+  const [sessionFormSlot, setSessionFormSlot] = useState<'first' | 'second'>('first');
+  const [sessionFormHostIds, setSessionFormHostIds] = useState<number[]>([]);
+  const [sessionFormError, setSessionFormError] = useState<string | null>(null);
+  const [sessionSubmitting, setSessionSubmitting] = useState(false);
+  const [confirmDeleteSession, setConfirmDeleteSession] = useState<Session | null>(null);
+  const [sessionDeleting, setSessionDeleting] = useState(false);
+
   useEffect(() => {
     if (!token) return;
     teamService.getTeams(token).then(setTeams).catch((e: Error) => setTeamsError(e.message)).finally(() => setTeamsLoading(false));
     hostService.getHosts(token).then(setHosts).catch((e: Error) => setHostsError(e.message)).finally(() => setHostsLoading(false));
     emceeService.getEmcees(token).then(setEmcees).catch((e: Error) => setEmceesError(e.message)).finally(() => setEmceesLoading(false));
   }, [token]);
+
+  const loadSessions = useCallback(() => {
+    if (!token) return;
+    setSessionsLoading(true);
+    setSessionsError(null);
+    sessionService.getSessions(token, {
+      team_id: filterTeamId ? Number(filterTeamId) : undefined,
+      emcee_id: filterEmceeId ? Number(filterEmceeId) : undefined,
+      date_from: filterDateFrom || undefined,
+      date_to: filterDateTo || undefined,
+    }).then(setSessions).catch((e: Error) => setSessionsError(e.message)).finally(() => setSessionsLoading(false));
+  }, [token, filterTeamId, filterEmceeId, filterDateFrom, filterDateTo]);
+
+  useEffect(() => {
+    if (activeTab === 'sessions') loadSessions();
+  }, [activeTab, loadSessions]);
 
   // ---- Team handlers ----
   const openCreateTeam = () => {
@@ -258,6 +293,47 @@ const AdminDashboard: React.FC = () => {
       closeAssign();
     } catch (err: any) { setAssignError(err.message); }
     finally { setAssignSubmitting(false); }
+  };
+
+  // ---- Session handlers ----
+  const openEditSession = (s: Session) => {
+    setEditingSession(s);
+    setSessionFormDate(s.date);
+    setSessionFormSlot(s.session_slot);
+    setSessionFormHostIds([...s.host_ids]);
+    setSessionFormError(null);
+  };
+  const closeEditSession = useCallback(() => { setEditingSession(null); setSessionFormError(null); }, []);
+
+  const toggleSessionHost = (id: number) => {
+    setSessionFormHostIds((prev) => prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id]);
+  };
+
+  const handleSessionUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !editingSession) return;
+    setSessionSubmitting(true); setSessionFormError(null);
+    try {
+      const updated = await sessionService.updateSession(token, editingSession.id, {
+        date: sessionFormDate,
+        session_slot: sessionFormSlot,
+        host_ids: sessionFormHostIds,
+      });
+      setSessions((prev) => prev.map((s) => s.id === updated.id ? updated : s));
+      closeEditSession();
+    } catch (err: any) { setSessionFormError(err.message); }
+    finally { setSessionSubmitting(false); }
+  };
+
+  const handleDeleteSession = async () => {
+    if (!token || !confirmDeleteSession) return;
+    setSessionDeleting(true);
+    try {
+      await sessionService.deleteSession(token, confirmDeleteSession.id);
+      setSessions((prev) => prev.filter((s) => s.id !== confirmDeleteSession.id));
+      setConfirmDeleteSession(null);
+    } catch (err: any) { setSessionsError(err.message); }
+    finally { setSessionDeleting(false); }
   };
 
   const activeTeams = teams.filter((t) => t.active);
@@ -410,8 +486,80 @@ const AdminDashboard: React.FC = () => {
 
         {/* Sessions tab */}
         {activeTab === 'sessions' && (
-          <div className="p-6">
-            <p className="text-sm text-slate-400">Session management coming soon.</p>
+          <div>
+            {/* Filters */}
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Team</label>
+                <select
+                  value={filterTeamId}
+                  onChange={(e) => setFilterTeamId(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">All teams</option>
+                  {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Emcee</label>
+                <select
+                  value={filterEmceeId}
+                  onChange={(e) => setFilterEmceeId(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">All emcees</option>
+                  {emcees.map((e) => <option key={e.id} value={e.id}>{e.email}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">From</label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">To</label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+              <button
+                onClick={loadSessions}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+              >
+                Apply
+              </button>
+            </div>
+
+            <div className="p-6">
+              {sessionsLoading && <p className="text-sm text-slate-400">Loading...</p>}
+              {sessionsError && <p className="text-sm text-red-500">{sessionsError}</p>}
+              {!sessionsLoading && !sessionsError && sessions.length === 0 && (
+                <p className="text-sm text-slate-400">No sessions found.</p>
+              )}
+              {sessions.length > 0 && (
+                <ul className="space-y-2">
+                  {sessions.map((s) => (
+                    <li key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800">
+                          {s.date} — {s.session_slot === 'first' ? '1st' : '2nd'} Session
+                        </p>
+                        <p className="text-xs text-slate-400">{s.team_name} · {s.host_ids.length} host{s.host_ids.length !== 1 ? 's' : ''} · {s.coin_entries_count} coin entr{s.coin_entries_count !== 1 ? 'ies' : 'y'}</p>
+                      </div>
+                      <button onClick={() => openEditSession(s)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0">Edit</button>
+                      <button onClick={() => setConfirmDeleteSession(s)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0">Delete</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -580,6 +728,122 @@ const AdminDashboard: React.FC = () => {
             className="text-xs font-semibold px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all duration-150"
           >
             Deactivate
+          </button>
+        </div>
+      </Modal>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Session edit modal                                                  */}
+      {/* ------------------------------------------------------------------ */}
+      <Modal open={!!editingSession} onClose={closeEditSession} maxWidth="max-w-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">Edit Session</h2>
+            <p className="text-xs text-slate-400 mt-0.5">{editingSession?.team_name}</p>
+          </div>
+          <CloseButton onClick={closeEditSession} />
+        </div>
+        <form onSubmit={handleSessionUpdate}>
+          <div className="px-6 py-5 space-y-4">
+            {sessionFormError && <FormError message={sessionFormError} />}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Date</label>
+                <input
+                  type="date"
+                  value={sessionFormDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setSessionFormDate(e.target.value)}
+                  required
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Slot</label>
+                <select
+                  value={sessionFormSlot}
+                  onChange={(e) => setSessionFormSlot(e.target.value as 'first' | 'second')}
+                  className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                >
+                  <option value="first">1st Session</option>
+                  <option value="second">2nd Session</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                Participating Hosts
+                {sessionFormHostIds.length > 0 && (
+                  <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700">
+                    {sessionFormHostIds.length} selected
+                  </span>
+                )}
+              </label>
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
+                {hosts.filter((h) => h.active || sessionFormHostIds.includes(h.id)).map((host) => (
+                  <label
+                    key={host.id}
+                    className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${sessionFormHostIds.includes(host.id) ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={sessionFormHostIds.includes(host.id)}
+                      onChange={() => toggleSessionHost(host.id)}
+                      className="rounded accent-teal-600"
+                    />
+                    <span className="text-sm text-slate-700 truncate flex-1">{host.email}</span>
+                    {host.team_name && <span className="text-xs text-slate-400 shrink-0">{host.team_name}</span>}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+            <button type="button" onClick={closeEditSession} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+            <SubmitButton loading={sessionSubmitting} label="Save Changes" loadingLabel="Saving…" />
+          </div>
+        </form>
+      </Modal>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Confirm delete session modal                                        */}
+      {/* ------------------------------------------------------------------ */}
+      <Modal open={!!confirmDeleteSession} onClose={() => !sessionDeleting && setConfirmDeleteSession(null)} maxWidth="max-w-sm">
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Delete Session</h3>
+              <p className="text-xs text-slate-400 mt-0.5">This action cannot be undone.</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600">
+            Delete the <span className="font-semibold text-slate-800">{confirmDeleteSession?.date} {confirmDeleteSession?.session_slot === 'first' ? '1st' : '2nd'} Session</span> for <span className="font-semibold text-slate-800">{confirmDeleteSession?.team_name}</span>?
+          </p>
+          {confirmDeleteSession && confirmDeleteSession.coin_entries_count > 0 && (
+            <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              This will also remove <span className="font-semibold">{confirmDeleteSession.coin_entries_count} coin entr{confirmDeleteSession.coin_entries_count !== 1 ? 'ies' : 'y'}</span>.
+            </p>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+          <button
+            onClick={() => setConfirmDeleteSession(null)}
+            disabled={sessionDeleting}
+            className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteSession}
+            disabled={sessionDeleting}
+            className="text-xs font-semibold px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all duration-150 disabled:opacity-50 min-w-[80px] text-center"
+          >
+            {sessionDeleting ? 'Deleting…' : 'Delete'}
           </button>
         </div>
       </Modal>
