@@ -5,6 +5,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { teamService } from '../../services/teamService';
 import { hostService } from '../../services/hostService';
 import { sessionService } from '../../services/sessionService';
+import { coinEntryService } from '../../services/coinEntryService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
@@ -26,6 +27,13 @@ const EmceeDashboard: React.FC = () => {
   const [formHostIds, setFormHostIds] = useState<number[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showCoinModal, setShowCoinModal] = useState(false);
+  const [isCoinModalVisible, setIsCoinModalVisible] = useState(false);
+  const [coinSession, setCoinSession] = useState<Session | null>(null);
+  const [coinValues, setCoinValues] = useState<Record<number, string>>({});
+  const [coinError, setCoinError] = useState<string | null>(null);
+  const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -67,6 +75,55 @@ const EmceeDashboard: React.FC = () => {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [showModal, closeModal]);
+
+  const openCoinModal = useCallback((session: Session) => {
+    const initial: Record<number, string> = {};
+    session.host_ids.forEach((id) => { initial[id] = '0'; });
+    setCoinSession(session);
+    setCoinValues(initial);
+    setCoinError(null);
+    setShowCoinModal(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setIsCoinModalVisible(true));
+    });
+  }, []);
+
+  const closeCoinModal = useCallback(() => {
+    setIsCoinModalVisible(false);
+    setTimeout(() => {
+      setShowCoinModal(false);
+      setCoinSession(null);
+      setCoinValues({});
+      setCoinError(null);
+    }, 220);
+  }, []);
+
+  useEffect(() => {
+    if (!showCoinModal) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCoinModal(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showCoinModal, closeCoinModal]);
+
+  const handleCoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !coinSession) return;
+
+    setIsCoinSubmitting(true);
+    setCoinError(null);
+
+    try {
+      const entries = Object.entries(coinValues).map(([uid, coins]) => ({
+        user_id: Number(uid),
+        coins: Number(coins),
+      }));
+      await coinEntryService.saveCoinEntries(token, coinSession.id, entries);
+      closeCoinModal();
+    } catch (err: any) {
+      setCoinError(err.message);
+      setIsCoinSubmitting(false);
+    }
+  };
 
   const toggleHost = (id: number) => {
     setFormHostIds((prev) =>
@@ -153,6 +210,14 @@ const EmceeDashboard: React.FC = () => {
                     </p>
                     <p className="text-xs text-slate-400">{session.team_name} · {session.host_emails.length} host{session.host_emails.length !== 1 ? 's' : ''}</p>
                   </div>
+                  {session.host_ids.length > 0 && (
+                    <button
+                      onClick={() => openCoinModal(session)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
+                    >
+                      Log Coins
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -302,6 +367,90 @@ const EmceeDashboard: React.FC = () => {
                       Creating…
                     </span>
                   ) : 'Create Session'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Coin Entry Modal */}
+      {showCoinModal && coinSession && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${isCoinModalVisible ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <div
+            className={`absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-200 ${isCoinModalVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeCoinModal}
+          />
+          <div
+            className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 ${isCoinModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'}`}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Log Coins</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {coinSession.date} — {coinSession.session_slot === 'first' ? '1st' : '2nd'} Session · {coinSession.team_name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeCoinModal}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                aria-label="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCoinSubmit}>
+              <div className="px-6 py-5 space-y-3 max-h-80 overflow-y-auto">
+                {coinError && (
+                  <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 px-3 py-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <p className="text-xs text-red-600">{coinError}</p>
+                  </div>
+                )}
+                {coinSession.host_ids.map((hostId, idx) => (
+                  <div key={hostId} className="flex items-center gap-3">
+                    <span className="text-xs text-slate-600 flex-1 truncate">{coinSession.host_emails[idx] ?? `Host #${hostId}`}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={coinValues[hostId] ?? '0'}
+                      onChange={(e) => setCoinValues((prev) => ({ ...prev, [hostId]: e.target.value }))}
+                      className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                      required
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={closeCoinModal}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCoinSubmitting}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[100px] text-center"
+                >
+                  {isCoinSubmitting ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <svg className="w-3 h-3 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Saving…
+                    </span>
+                  ) : 'Save Entries'}
                 </button>
               </div>
             </form>
