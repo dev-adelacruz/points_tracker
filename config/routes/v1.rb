@@ -15,6 +15,7 @@ namespace :v1 do
   namespace :host do
     get "coin_history", to: "coin_history#show"
     get "earnings_summary", to: "earnings_summary#show"
+    get "leaderboard_rank", to: "leaderboard_rank#show"
   end
 
   resources :sessions, only: [ :index, :show, :create, :update, :destroy ] do
