@@ -12,4 +12,5 @@ namespace :v1 do
   end
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
   resources :emcees, only: [ :index ]
+  resources :sessions, only: [ :index, :show, :create ]
 end
