@@ -19,6 +19,7 @@ RSpec.describe "Leaderboard" do
         produces "application/json"
         parameter name: :date_from, in: :query, type: :string, required: false
         parameter name: :date_to, in: :query, type: :string, required: false
+        parameter name: :team_id, in: :query, type: :integer, required: false
         parameter name: :page, in: :query, type: :integer, required: false
         parameter name: :per_page, in: :query, type: :integer, required: false
 
@@ -81,6 +82,27 @@ RSpec.describe "Leaderboard" do
 
           run_test! do
             expect(response).to have_http_status :ok
+          end
+        end
+
+        response(200, "filters by team_id to show intra-team ranking") do
+          let(:team_id) { team.id }
+          let(:other_team) { create(:team) }
+          let(:host_other) { create(:user, :host) }
+
+          before do
+            create(:team_membership, user: host1, team: team)
+            create(:team_membership, user: host_other, team: other_team)
+            create(:coin_entry, session: session, user: host1, coins: 10_000)
+            create(:coin_entry, session: session, user: host2, coins: 5_000)
+            sign_in admin
+          end
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            user_ids = json_response[:data].map { |h| h[:user_id] }
+            expect(user_ids).to include(host1.id)
+            expect(user_ids).not_to include(host_other.id)
           end
         end
 

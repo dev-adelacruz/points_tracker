@@ -3,19 +3,40 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
 import { leaderboardService } from '../../services/leaderboardService';
+import { teamService } from '../../services/teamService';
 import type { LeaderboardEntry, LeaderboardMeta } from '../../interfaces/leaderboard';
+import type { Team } from '../../interfaces/team';
+
+const SS_PRESET = 'lb_preset';
+const SS_TEAM = 'lb_team_id';
 
 const formatCoins = (n: number) => n.toLocaleString();
 
 const LeaderboardPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const userRole = useSelector((state: RootState) => state.user.user?.role);
 
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [meta, setMeta] = useState<LeaderboardMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [preset, setPreset] = useState<'today' | 'week' | 'month' | 'all'>('month');
+
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(() => {
+    const v = sessionStorage.getItem(SS_TEAM);
+    return v ? Number(v) : null;
+  });
+  const [preset, setPreset] = useState<'today' | 'week' | 'month' | 'all'>(() => {
+    return (sessionStorage.getItem(SS_PRESET) as 'today' | 'week' | 'month' | 'all') || 'month';
+  });
   const [page, setPage] = useState(1);
+
+  const canFilterByTeam = userRole === 'admin' || userRole === 'emcee';
+
+  useEffect(() => {
+    if (!token || !canFilterByTeam) return;
+    teamService.getTeams(token).then(setTeams).catch(() => {});
+  }, [token, canFilterByTeam]);
 
   const presetRange = useMemo(() => {
     const d = new Date();
@@ -38,24 +59,45 @@ const LeaderboardPage: React.FC = () => {
     if (!token) return;
     setIsLoading(true);
     setError(null);
-    leaderboardService.getLeaderboard(token, { ...presetRange, page: p, per_page: 50 })
+    leaderboardService.getLeaderboard(token, {
+      ...presetRange,
+      ...(selectedTeamId ? { team_id: selectedTeamId } : {}),
+      page: p,
+      per_page: 50,
+    })
       .then((result) => { setEntries(result.data); setMeta(result.meta); })
       .catch((e: Error) => setError(e.message))
       .finally(() => setIsLoading(false));
-  }, [token, presetRange]);
+  }, [token, presetRange, selectedTeamId]);
 
   useEffect(() => {
     setPage(1);
     load(1);
-  }, [presetRange]);
+  }, [presetRange, selectedTeamId]);
 
   useEffect(() => {
     load(page);
   }, [page]);
 
   const handlePreset = (p: typeof preset) => {
+    sessionStorage.setItem(SS_PRESET, p);
     setPreset(p);
   };
+
+  const handleTeamChange = (teamId: number | null) => {
+    if (teamId === null) {
+      sessionStorage.removeItem(SS_TEAM);
+    } else {
+      sessionStorage.setItem(SS_TEAM, String(teamId));
+    }
+    setSelectedTeamId(teamId);
+  };
+
+  const activeTeams = canFilterByTeam
+    ? (userRole === 'emcee'
+        ? teams.filter((t) => t.active)
+        : teams.filter((t) => t.active))
+    : [];
 
   return (
     <DashboardLayout title="Leaderboard">
@@ -65,7 +107,7 @@ const LeaderboardPage: React.FC = () => {
           <p className="text-xs text-slate-400 mt-0.5">All active hosts ranked by total coins earned.</p>
         </div>
 
-        <div className="px-6 pt-4 pb-0 flex gap-2">
+        <div className="px-6 pt-4 pb-0 flex flex-wrap items-center gap-2">
           {(['today', 'week', 'month', 'all'] as const).map((p) => (
             <button
               key={p}
@@ -79,6 +121,23 @@ const LeaderboardPage: React.FC = () => {
               {p === 'today' ? 'Today' : p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
             </button>
           ))}
+
+          {canFilterByTeam && activeTeams.length > 0 && (
+            <>
+              <span className="w-px h-4 bg-slate-200 mx-1" />
+              <select
+                value={selectedTeamId ?? ''}
+                onChange={(e) => handleTeamChange(e.target.value === '' ? null : Number(e.target.value))}
+                className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow bg-white"
+              >
+                <option value="">All Teams</option>
+                {activeTeams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+
           {meta && (
             <span className="ml-auto text-xs text-slate-400 self-center">{meta.total_count} host{meta.total_count !== 1 ? 's' : ''}</span>
           )}
@@ -88,7 +147,7 @@ const LeaderboardPage: React.FC = () => {
           {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}
           {!isLoading && !error && entries.length === 0 && (
-            <p className="text-sm text-slate-400">No data for this period.</p>
+            <p className="text-sm text-slate-400">No data for this period{selectedTeamId ? ' and team' : ''}.</p>
           )}
           {!isLoading && !error && entries.length > 0 && (
             <>
