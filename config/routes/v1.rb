@@ -14,6 +14,7 @@ namespace :v1 do
   resources :emcees, only: [ :index ]
   namespace :host do
     get "coin_history", to: "coin_history#show"
+    get "earnings_summary", to: "earnings_summary#show"
   end
 
   resources :sessions, only: [ :index, :show, :create, :update, :destroy ] do
