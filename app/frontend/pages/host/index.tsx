@@ -151,6 +151,58 @@ const HostDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Monthly Quota Progress */}
+      {summary && summary.monthly_coin_quota > 0 && (() => {
+        const pct = Math.min(summary.quota_progress, 100);
+        const met = summary.this_month >= summary.monthly_coin_quota;
+        const barColor = met ? 'bg-teal-500' : pct >= 66 ? 'bg-teal-500' : pct >= 33 ? 'bg-amber-400' : 'bg-red-400';
+        const textColor = met ? 'text-teal-600' : pct >= 66 ? 'text-teal-600' : pct >= 33 ? 'text-amber-600' : 'text-red-500';
+        return (
+          <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Monthly Quota</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Progress toward your {formatCoins(summary.monthly_coin_quota)}-coin target this month.</p>
+              </div>
+              {met && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-100 text-teal-700">Quota Met 🎉</span>
+              )}
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Earned</p>
+                  <p className={`text-lg font-black tabular-nums ${textColor}`}>{formatCoins(summary.this_month)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Remaining</p>
+                  <p className="text-lg font-black tabular-nums text-slate-700">{met ? '—' : formatCoins(summary.coins_remaining)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-center">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Days Left</p>
+                  <p className="text-lg font-black tabular-nums text-slate-700">{summary.days_remaining_in_month}</p>
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-slate-500">0</span>
+                  <span className={`text-sm font-bold ${textColor}`}>{summary.quota_progress}%</span>
+                  <span className="text-xs text-slate-500">{formatCoins(summary.monthly_coin_quota)}</span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${barColor} animate-bar-fill`}
+                    style={{ '--bar-width': `${pct}%` } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Coin History */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">

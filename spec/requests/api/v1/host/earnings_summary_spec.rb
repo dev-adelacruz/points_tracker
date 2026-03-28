@@ -4,7 +4,7 @@ require "swagger_helper"
 
 RSpec.describe "Host::EarningsSummary" do
   let(:json_response) { JSON.parse(response.body, symbolize_names: true) }
-  let(:host) { create(:user, :host) }
+  let(:host) { create(:user, :host, monthly_coin_quota: 100_000) }
   let(:other_host) { create(:user, :host) }
   let(:emcee) { create(:user, :emcee) }
   let(:team) { create(:team) }
@@ -32,6 +32,10 @@ RSpec.describe "Host::EarningsSummary" do
             expect(data[:this_week]).to eq(10_000)
             expect(data[:this_month]).to eq(10_000)
             expect(data[:all_time]).to eq(15_000)
+            expect(data[:monthly_coin_quota]).to eq(100_000)
+            expect(data[:coins_remaining]).to eq(90_000)
+            expect(data[:quota_progress]).to eq(10.0)
+            expect(data[:days_remaining_in_month]).to be_between(1, 31)
           end
         end
 
