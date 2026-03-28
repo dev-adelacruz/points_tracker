@@ -691,6 +691,71 @@ const EmceeDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Team Quota Overview */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">Team Quota Overview</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Pacing and on-track status for hosts in the selected team.</p>
+        </div>
+
+        <div className="p-6">
+          {!selectedTeamId && <p className="text-sm text-slate-400">Select a team in Host Performance to view quota overview.</p>}
+          {selectedTeamId && hostStatsLoading && <p className="text-sm text-slate-400">Loading...</p>}
+          {selectedTeamId && hostStatsError && <p className="text-sm text-red-500">{hostStatsError}</p>}
+          {selectedTeamId && !hostStatsLoading && !hostStatsError && hostStats.length === 0 && (
+            <p className="text-sm text-slate-400">No hosts found for this team.</p>
+          )}
+          {selectedTeamId && !hostStatsLoading && !hostStatsError && hostStats.length > 0 && (
+            <ul className="space-y-2">
+              {hostStats.map((host) => {
+                const hasQuota = host.monthly_coin_quota > 0;
+                const isOffTrack = host.on_track === false;
+                const isOnTrack = host.on_track === true;
+                return (
+                  <li
+                    key={host.user_id}
+                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                      isOffTrack
+                        ? 'border-red-200 bg-red-50'
+                        : isOnTrack
+                        ? 'border-teal-100 bg-teal-50'
+                        : 'border-slate-100 bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{host.email}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {hasQuota ? (
+                          <>
+                            {formatCoins(host.total_coins)} earned · Paced: {formatCoins(host.paced_monthly_coins)} / {formatCoins(host.monthly_coin_quota)}
+                          </>
+                        ) : (
+                          'No quota set'
+                        )}
+                      </p>
+                    </div>
+                    {hasQuota && (
+                      <span className="text-xs font-bold text-slate-600 shrink-0 tabular-nums">
+                        {host.quota_progress}%
+                      </span>
+                    )}
+                    {isOffTrack && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">Off Track</span>
+                    )}
+                    {isOnTrack && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 shrink-0">On Track</span>
+                    )}
+                    {!hasQuota && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">No Quota</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* Coin Entry Modal */}
       {showCoinModal && coinSession && (
         <div
