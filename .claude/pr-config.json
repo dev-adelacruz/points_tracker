@@ -1,0 +1,7 @@
+{
+  "repo": "dev-adelacruz/points_tracker",
+  "baseBranch": "main",
+  "teamReviewer": "drindc24",
+  "milestoneName": "Untracked",
+  "defaultLabels": ["ai-contribution-level:3"]
+}
