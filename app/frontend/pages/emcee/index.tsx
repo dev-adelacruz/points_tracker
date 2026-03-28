@@ -9,6 +9,7 @@ import { coinEntryService } from '../../services/coinEntryService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
+import type { CoinEntry } from '../../interfaces/coinEntry';
 
 const EmceeDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -32,6 +33,7 @@ const EmceeDashboard: React.FC = () => {
   const [isCoinModalVisible, setIsCoinModalVisible] = useState(false);
   const [coinSession, setCoinSession] = useState<Session | null>(null);
   const [coinValues, setCoinValues] = useState<Record<number, string>>({});
+  const [existingEntries, setExistingEntries] = useState<CoinEntry[]>([]);
   const [coinError, setCoinError] = useState<string | null>(null);
   const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
@@ -76,17 +78,29 @@ const EmceeDashboard: React.FC = () => {
     return () => document.removeEventListener('keydown', handler);
   }, [showModal, closeModal]);
 
-  const openCoinModal = useCallback((session: Session) => {
+  const openCoinModal = useCallback(async (session: Session) => {
+    if (!token) return;
+
     const initial: Record<number, string> = {};
     session.host_ids.forEach((id) => { initial[id] = '0'; });
+
+    let fetched: CoinEntry[] = [];
+    try {
+      fetched = await coinEntryService.getCoinEntries(token, session.id);
+      fetched.forEach((entry) => { initial[entry.user_id] = String(entry.coins); });
+    } catch {
+      // pre-population is best-effort; proceed with zeros
+    }
+
     setCoinSession(session);
     setCoinValues(initial);
+    setExistingEntries(fetched);
     setCoinError(null);
     setShowCoinModal(true);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setIsCoinModalVisible(true));
     });
-  }, []);
+  }, [token]);
 
   const closeCoinModal = useCallback(() => {
     setIsCoinModalVisible(false);
@@ -94,6 +108,7 @@ const EmceeDashboard: React.FC = () => {
       setShowCoinModal(false);
       setCoinSession(null);
       setCoinValues({});
+      setExistingEntries([]);
       setCoinError(null);
     }, 220);
   }, []);
@@ -414,19 +429,25 @@ const EmceeDashboard: React.FC = () => {
                     <p className="text-xs text-red-600">{coinError}</p>
                   </div>
                 )}
-                {coinSession.host_ids.map((hostId, idx) => (
-                  <div key={hostId} className="flex items-center gap-3">
-                    <span className="text-xs text-slate-600 flex-1 truncate">{coinSession.host_emails[idx] ?? `Host #${hostId}`}</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={coinValues[hostId] ?? '0'}
-                      onChange={(e) => setCoinValues((prev) => ({ ...prev, [hostId]: e.target.value }))}
-                      className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
-                      required
-                    />
-                  </div>
-                ))}
+                {coinSession.host_ids.map((hostId, idx) => {
+                  const existing = existingEntries.find((e) => e.user_id === hostId);
+                  return (
+                    <div key={hostId} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-600 flex-1 truncate">{coinSession.host_emails[idx] ?? `Host #${hostId}`}</span>
+                      {existing?.edited && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0">Edited</span>
+                      )}
+                      <input
+                        type="number"
+                        min="0"
+                        value={coinValues[hostId] ?? '0'}
+                        onChange={(e) => setCoinValues((prev) => ({ ...prev, [hostId]: e.target.value }))}
+                        className="w-32 text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                        required
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">

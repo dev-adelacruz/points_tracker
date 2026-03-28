@@ -45,6 +45,31 @@ class CoinEntryService {
     const body = await response.json();
     return body.data as CoinEntry[];
   }
+
+  async updateCoinEntry(
+    token: string,
+    sessionId: number,
+    entryId: number,
+    coins: number
+  ): Promise<CoinEntry> {
+    const response = await fetch(`${this.baseURL}/sessions/${sessionId}/coin_entries/${entryId}`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ coin_entry: { coins } }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.status?.message || `Failed to update coin entry with status ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data as CoinEntry;
+  }
 }
 
 export const coinEntryService = new CoinEntryService();

@@ -5,4 +5,5 @@ export interface CoinEntry {
   host_email: string;
   coins: number;
   updated_at: string;
+  edited: boolean;
 }

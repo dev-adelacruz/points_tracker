@@ -13,6 +13,6 @@ namespace :v1 do
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
   resources :emcees, only: [ :index ]
   resources :sessions, only: [ :index, :show, :create ] do
-    resources :coin_entries, only: [ :index, :create ], module: "sessions"
+    resources :coin_entries, only: [ :index, :create, :update ], module: "sessions"
   end
 end

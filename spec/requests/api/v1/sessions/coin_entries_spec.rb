@@ -190,4 +190,100 @@ RSpec.describe "Sessions::CoinEntries" do
       end
     end
   end
+
+  describe "#update" do
+    let(:entry) { create(:coin_entry, session: session, user: host1, coins: 5_000) }
+
+    path "/api/v1/sessions/{session_id}/coin_entries/{id}" do
+      parameter name: :session_id, in: :path, type: :integer
+      parameter name: :id, in: :path, type: :integer
+
+      patch "updates a coin entry" do
+        tags "CoinEntries"
+        consumes "application/json"
+        produces "application/json"
+        parameter name: :params, in: :body, schema: {
+          type: :object,
+          properties: {
+            coin_entry: {
+              type: :object,
+              properties: { coins: { type: :integer } },
+              required: [ "coins" ]
+            }
+          },
+          required: [ "coin_entry" ]
+        }
+
+        response(200, "admin can edit entry from any month") do
+          let(:session_id) { session.id }
+          let(:id) { entry.id }
+          let(:params) { { coin_entry: { coins: 8_000 } } }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data][:coins]).to eq(8_000)
+            expect(entry.coin_entry_audits.count).to eq(1)
+            expect(entry.coin_entry_audits.last.previous_coins).to eq(5_000)
+          end
+        end
+
+        response(200, "emcee can edit entry from current month") do
+          let(:session_id) { session.id }
+          let(:id) { entry.id }
+          let(:params) { { coin_entry: { coins: 3_000 } } }
+
+          before { sign_in emcee }
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data][:coins]).to eq(3_000)
+          end
+        end
+
+        response(403, "emcee cannot edit entry from previous month") do
+          let(:old_session) { create(:session, team: team, created_by: emcee, date: 2.months.ago.to_date) }
+          let(:old_entry) { create(:coin_entry, session: old_session, user: host1, coins: 1_000) }
+          let(:session_id) { old_session.id }
+          let(:id) { old_entry.id }
+          let(:params) { { coin_entry: { coins: 2_000 } } }
+
+          before do
+            create(:team_membership, user: emcee, team: team) if emcee.teams.where(id: team.id).empty?
+            old_session.session_hosts.create!(user: host1)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status :forbidden
+          end
+        end
+
+        response(404, "returns not found for missing entry") do
+          let(:session_id) { session.id }
+          let(:id) { 0 }
+          let(:params) { { coin_entry: { coins: 1_000 } } }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :not_found
+          end
+        end
+
+        response(403, "returns forbidden for host") do
+          let(:session_id) { session.id }
+          let(:id) { entry.id }
+          let(:params) { { coin_entry: { coins: 1_000 } } }
+
+          before { sign_in host1 }
+
+          run_test! do
+            expect(response).to have_http_status :forbidden
+          end
+        end
+      end
+    end
+  end
 end

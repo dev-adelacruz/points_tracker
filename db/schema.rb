@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_153722) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_154246) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -23,6 +23,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_153722) do
     t.index ["session_id", "user_id"], name: "index_coin_entries_on_session_id_and_user_id", unique: true
     t.index ["session_id"], name: "index_coin_entries_on_session_id"
     t.index ["user_id"], name: "index_coin_entries_on_user_id"
+  end
+
+  create_table "coin_entry_audits", force: :cascade do |t|
+    t.bigint "coin_entry_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "edited_by_id", null: false
+    t.integer "previous_coins", null: false
+    t.datetime "updated_at", null: false
+    t.index ["coin_entry_id"], name: "index_coin_entry_audits_on_coin_entry_id"
+    t.index ["edited_by_id"], name: "index_coin_entry_audits_on_edited_by_id"
   end
 
   create_table "session_hosts", force: :cascade do |t|
@@ -98,6 +108,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_153722) do
 
   add_foreign_key "coin_entries", "sessions"
   add_foreign_key "coin_entries", "users"
+  add_foreign_key "coin_entry_audits", "coin_entries"
+  add_foreign_key "coin_entry_audits", "users", column: "edited_by_id"
   add_foreign_key "session_hosts", "sessions"
   add_foreign_key "session_hosts", "users"
   add_foreign_key "sessions", "teams"
