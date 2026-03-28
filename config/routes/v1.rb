@@ -10,5 +10,5 @@ namespace :v1 do
   resources :teams, only: [ :index, :create, :update, :destroy ] do
     resource :emcee_assignment, only: [ :show, :update, :destroy ], module: "teams"
   end
-  resources :hosts, only: [ :index, :show ]
+  resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
 end
