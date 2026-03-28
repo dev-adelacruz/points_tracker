@@ -37,8 +37,11 @@ class AuthService {
         throw new Error(errorData.message || `Login failed with status ${response.status}`);
       }
 
-      const data: AuthResponse = await response.json();
-      return data;
+      const token = response.headers.get('Authorization')?.replace('Bearer ', '') ?? '';
+      const body = await response.json();
+      const user = body.status?.data?.user;
+
+      return { token, user };
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(error.message);
@@ -47,11 +50,12 @@ class AuthService {
     }
   }
 
-  async logout(): Promise<void> {
+  async logout(token: string): Promise<void> {
     try {
       const response = await fetch(`${this.baseURL}/users/sign_out`, {
         method: 'DELETE',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
