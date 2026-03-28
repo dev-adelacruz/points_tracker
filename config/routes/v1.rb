@@ -12,6 +12,10 @@ namespace :v1 do
   end
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
   resources :emcees, only: [ :index ]
+  namespace :host do
+    get "coin_history", to: "coin_history#show"
+  end
+
   resources :sessions, only: [ :index, :show, :create, :update, :destroy ] do
     resources :coin_entries, only: [ :index, :create, :update ], module: "sessions"
   end
