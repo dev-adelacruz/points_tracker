@@ -7,4 +7,5 @@ export interface Session {
   created_by_id: number;
   host_ids: number[];
   host_emails: string[];
+  coin_entries_count: number;
 }

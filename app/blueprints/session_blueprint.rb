@@ -28,4 +28,8 @@ class SessionBlueprint < Blueprinter::Base
   field :host_emails do |session|
     session.hosts.pluck(:email)
   end
+
+  field :coin_entries_count do |session|
+    session.coin_entries.count
+  end
 end
