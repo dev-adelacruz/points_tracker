@@ -20,4 +20,8 @@ class CoinEntryBlueprint < Blueprinter::Base
   field :updated_at do |entry|
     entry.updated_at
   end
+
+  field :edited do |entry|
+    entry.edited?
+  end
 end

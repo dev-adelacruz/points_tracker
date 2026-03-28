@@ -4,6 +4,7 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
   before_action :authenticate_user!
   before_action :authorize_role!
   before_action :set_session
+  before_action :set_entry, only: [ :update ]
 
   def index
     entries = @session.coin_entries.includes(:user).order(:user_id)
@@ -55,6 +56,26 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
     end
   end
 
+  def update
+    return render json: { status: 403, message: "Forbidden" }, status: :forbidden unless can_edit_entry?
+
+    previous_coins = @entry.coins
+    new_coins = params.require(:coin_entry).permit(:coins)[:coins].to_i
+
+    if @entry.update(coins: new_coins)
+      @entry.coin_entry_audits.create!(previous_coins: previous_coins, edited_by: current_user)
+
+      render json: {
+        status: { code: 200, message: "Coin entry updated successfully." },
+        data: CoinEntryBlueprint.render_as_hash(@entry.reload)
+      }, status: :ok
+    else
+      render json: {
+        status: { code: 422, message: @entry.errors.full_messages.join(", ") }
+      }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def authorize_role!
@@ -70,5 +91,16 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
     unless current_user.teams.exists?(id: @session.team_id)
       render json: { status: 403, message: "Forbidden" }, status: :forbidden
     end
+  end
+
+  def set_entry
+    @entry = @session.coin_entries.find_by(id: params[:id])
+    render json: { status: 404, message: "Coin entry not found" }, status: :not_found unless @entry
+  end
+
+  def can_edit_entry?
+    return true if current_user.admin?
+
+    @session.date >= Date.current.beginning_of_month
   end
 end
