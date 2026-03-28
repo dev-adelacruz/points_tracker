@@ -23,6 +23,11 @@ namespace :v1 do
     get "leaderboard_rank", to: "leaderboard_rank#show"
   end
 
+  namespace :admin do
+    get "company_quota_stats", to: "company_quota_stats#index"
+    put "system_settings/:key", to: "system_settings#update"
+  end
+
   get "leaderboard", to: "leaderboard#index"
 
   resources :sessions, only: [ :index, :show, :create, :update, :destroy ] do
