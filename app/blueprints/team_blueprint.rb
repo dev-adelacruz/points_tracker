@@ -3,5 +3,5 @@
 class TeamBlueprint < Blueprinter::Base
   identifier :id
 
-  fields :name
+  fields :name, :description, :active, :host_count
 end
