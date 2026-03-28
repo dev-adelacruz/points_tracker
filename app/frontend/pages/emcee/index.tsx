@@ -288,32 +288,91 @@ const EmceeDashboard: React.FC = () => {
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 space-y-4">
           {!isLoading && sessions.length === 0 && (
-            <p className="text-sm text-slate-400">No sessions recorded yet.</p>
+            <div className="flex flex-col items-center gap-2 py-4 text-center">
+              <p className="text-sm text-slate-500 font-medium">No sessions for today yet.</p>
+              <p className="text-xs text-slate-400">Hit <span className="font-semibold">+ New Session</span> above to get started.</p>
+            </div>
           )}
-          {sessions.length > 0 && (
-            <ul className="space-y-2">
-              {sessions.map((session) => (
-                <li key={session.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {session.date} — {session.session_slot === 'first' ? '1st' : '2nd'} Session
-                    </p>
-                    <p className="text-xs text-slate-400">{session.team_name} · {session.host_emails.length} host{session.host_emails.length !== 1 ? 's' : ''}</p>
+          {sessions.length > 0 && (() => {
+            const todaySessions = sessions.filter((s) => s.date === today);
+            const pastSessions = sessions.filter((s) => s.date !== today);
+            return (
+              <>
+                {todaySessions.length === 0 && (
+                  <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-700 font-medium">No sessions created for today yet — tap <span className="font-bold">+ New Session</span> to add one.</p>
                   </div>
-                  {session.host_ids.length > 0 && (
-                    <button
-                      onClick={() => openCoinModal(session)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
-                    >
-                      Log Coins
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                )}
+                {todaySessions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Today</p>
+                    <ul className="space-y-2">
+                      {todaySessions.map((session) => {
+                        const isLogged = session.coin_entries_count > 0;
+                        const isPending = session.host_ids.length > 0 && !isLogged;
+                        return (
+                          <li
+                            key={session.id}
+                            onClick={isPending ? () => openCoinModal(session) : undefined}
+                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${isPending ? 'border-amber-200 bg-amber-50 cursor-pointer hover:bg-amber-100' : 'border-slate-100 bg-slate-50'}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {session.session_slot === 'first' ? '1st' : '2nd'} Session
+                              </p>
+                              <p className="text-xs text-slate-400">{session.team_name} · {session.host_emails.length} host{session.host_emails.length !== 1 ? 's' : ''}</p>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${isLogged ? 'bg-teal-100 text-teal-700' : 'bg-amber-200 text-amber-800'}`}>
+                              {isLogged ? 'Logged' : 'Pending'}
+                            </span>
+                            {isPending && (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 18 15 12 9 6" />
+                              </svg>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+                {pastSessions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Earlier</p>
+                    <ul className="space-y-2">
+                      {pastSessions.map((session) => {
+                        const isLogged = session.coin_entries_count > 0;
+                        return (
+                          <li key={session.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {session.date} — {session.session_slot === 'first' ? '1st' : '2nd'} Session
+                              </p>
+                              <p className="text-xs text-slate-400">{session.team_name} · {session.host_emails.length} host{session.host_emails.length !== 1 ? 's' : ''}</p>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${isLogged ? 'bg-teal-100 text-teal-700' : 'bg-slate-200 text-slate-500'}`}>
+                              {isLogged ? 'Logged' : 'Pending'}
+                            </span>
+                            {session.host_ids.length > 0 && (
+                              <button
+                                onClick={() => openCoinModal(session)}
+                                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
+                              >
+                                {isLogged ? 'Edit' : 'Log Coins'}
+                              </button>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
