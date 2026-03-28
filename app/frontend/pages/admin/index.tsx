@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
@@ -6,12 +6,16 @@ import { teamService } from '../../services/teamService';
 import { hostService } from '../../services/hostService';
 import { emceeService } from '../../services/emceeService';
 import { sessionService } from '../../services/sessionService';
+import { companyQuotaService } from '../../services/companyQuotaService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Emcee } from '../../interfaces/emcee';
 import type { Session } from '../../interfaces/session';
+import type { CompanyQuotaStat, CompanyQuotaSummary } from '../../interfaces/companyQuotaStat';
 
-type Tab = 'teams' | 'hosts' | 'emcees' | 'sessions';
+type Tab = 'teams' | 'hosts' | 'emcees' | 'sessions' | 'quota';
+
+const formatCoins = (n: number) => n.toLocaleString();
 
 // ---------------------------------------------------------------------------
 // Shared Modal primitive — handles mount/unmount animation, backdrop, Escape
@@ -169,6 +173,19 @@ const AdminDashboard: React.FC = () => {
   const [confirmDeleteSession, setConfirmDeleteSession] = useState<Session | null>(null);
   const [sessionDeleting, setSessionDeleting] = useState(false);
 
+  // Quota state
+  const [quotaStats, setQuotaStats] = useState<CompanyQuotaStat[]>([]);
+  const [quotaSummary, setQuotaSummary] = useState<CompanyQuotaSummary | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+  const [quotaDateFrom, setQuotaDateFrom] = useState('');
+  const [quotaDateTo, setQuotaDateTo] = useState('');
+  const [quotaSort, setQuotaSort] = useState<'asc' | 'desc'>('desc');
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [targetInput, setTargetInput] = useState('');
+  const [targetSaving, setTargetSaving] = useState(false);
+  const [targetError, setTargetError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!token) return;
     teamService.getTeams(token).then(setTeams).catch((e: Error) => setTeamsError(e.message)).finally(() => setTeamsLoading(false));
@@ -191,6 +208,45 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'sessions') loadSessions();
   }, [activeTab, loadSessions]);
+
+  const quotaParams = useMemo(() => ({
+    date_from: quotaDateFrom || undefined,
+    date_to: quotaDateTo || undefined,
+    sort: quotaSort,
+  }), [quotaDateFrom, quotaDateTo, quotaSort]);
+
+  const loadQuotaStats = useCallback(() => {
+    if (!token) return;
+    setQuotaLoading(true);
+    setQuotaError(null);
+    companyQuotaService.getCompanyQuotaStats(token, quotaParams)
+      .then(({ summary, data }) => {
+        setQuotaSummary(summary);
+        setQuotaStats(data);
+        if (!editingTarget) setTargetInput(String(summary.company_coin_target));
+      })
+      .catch((e: Error) => setQuotaError(e.message))
+      .finally(() => setQuotaLoading(false));
+  }, [token, quotaParams, editingTarget]);
+
+  useEffect(() => {
+    if (activeTab === 'quota') loadQuotaStats();
+  }, [activeTab, loadQuotaStats]);
+
+  const handleSaveTarget = async () => {
+    if (!token) return;
+    setTargetSaving(true);
+    setTargetError(null);
+    try {
+      await companyQuotaService.updateSystemSetting(token, 'company_coin_target', targetInput);
+      setEditingTarget(false);
+      loadQuotaStats();
+    } catch (e: any) {
+      setTargetError(e.message);
+    } finally {
+      setTargetSaving(false);
+    }
+  };
 
   // ---- Team handlers ----
   const openCreateTeam = () => {
@@ -346,6 +402,7 @@ const AdminDashboard: React.FC = () => {
     { key: 'hosts', label: 'Hosts' },
     { key: 'emcees', label: 'Emcees' },
     { key: 'sessions', label: 'Sessions' },
+    { key: 'quota', label: 'Quota' },
   ];
 
   return (
@@ -557,6 +614,172 @@ const AdminDashboard: React.FC = () => {
                       <button onClick={() => setConfirmDeleteSession(s)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0">Delete</button>
                     </li>
                   ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Quota tab */}
+        {activeTab === 'quota' && (
+          <div>
+            {/* Filters + target */}
+            <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">From</label>
+                <input
+                  type="date"
+                  value={quotaDateFrom}
+                  onChange={(e) => setQuotaDateFrom(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">To</label>
+                <input
+                  type="date"
+                  value={quotaDateTo}
+                  onChange={(e) => setQuotaDateTo(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Sort by %</label>
+                <select
+                  value={quotaSort}
+                  onChange={(e) => setQuotaSort(e.target.value as 'asc' | 'desc')}
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="desc">Highest first</option>
+                  <option value="asc">Lowest first</option>
+                </select>
+              </div>
+              <button
+                onClick={loadQuotaStats}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+              >
+                Apply
+              </button>
+              <div className="ml-auto flex items-end gap-2">
+                <div>
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1">Company Target (coins)</label>
+                  {editingTarget ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min="0"
+                        value={targetInput}
+                        onChange={(e) => setTargetInput(e.target.value)}
+                        className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 w-28 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={handleSaveTarget}
+                        disabled={targetSaving}
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 transition-colors"
+                      >
+                        {targetSaving ? '…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingTarget(false); setTargetError(null); }}
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-800">
+                        {quotaSummary ? formatCoins(quotaSummary.company_coin_target) : '—'}
+                      </span>
+                      <button
+                        onClick={() => setEditingTarget(true)}
+                        className="text-xs text-teal-600 hover:text-teal-800 font-medium"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
+                  {targetError && <p className="text-[10px] text-red-500 mt-0.5">{targetError}</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Summary row */}
+            {quotaSummary && (
+              <div className="px-6 py-4 border-b border-slate-100 grid grid-cols-4 gap-4">
+                {[
+                  { label: 'Total Hosts', value: quotaSummary.total_hosts },
+                  { label: 'On Track', value: quotaSummary.on_track_count, color: 'text-teal-600' },
+                  { label: 'Off Track', value: quotaSummary.off_track_count, color: 'text-red-500' },
+                  { label: 'Met Quota', value: quotaSummary.met_quota_count, color: 'text-amber-600' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-center">
+                    <p className={`text-lg font-black tabular-nums ${color ?? 'text-slate-800'}`}>{value}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-medium">{label}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Host list */}
+            <div className="p-6">
+              {quotaLoading && <p className="text-sm text-slate-400">Loading...</p>}
+              {quotaError && <p className="text-sm text-red-500">{quotaError}</p>}
+              {!quotaLoading && !quotaError && quotaStats.length === 0 && (
+                <p className="text-sm text-slate-400">No active hosts found.</p>
+              )}
+              {!quotaLoading && !quotaError && quotaStats.length > 0 && (
+                <ul className="space-y-2">
+                  {quotaStats.map((host) => {
+                    const hasQuota = host.monthly_coin_quota > 0;
+                    const progressCapped = Math.min(host.quota_progress, 100);
+                    return (
+                      <li
+                        key={host.user_id}
+                        className={`rounded-xl border px-4 py-3 ${
+                          host.met_quota
+                            ? 'border-amber-200 bg-amber-50'
+                            : host.on_track === false
+                            ? 'border-red-200 bg-red-50'
+                            : host.on_track === true
+                            ? 'border-teal-100 bg-teal-50'
+                            : 'border-slate-100 bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 mb-1.5">
+                          <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{host.email}</span>
+                          {host.met_quota && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0">Met Quota</span>
+                          )}
+                          {!host.met_quota && host.on_track === true && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 shrink-0">On Track</span>
+                          )}
+                          {!host.met_quota && host.on_track === false && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">Off Track</span>
+                          )}
+                          {!hasQuota && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">No Quota</span>
+                          )}
+                          <span className="text-sm font-bold text-slate-700 shrink-0 tabular-nums">{formatCoins(host.total_coins)}</span>
+                        </div>
+                        {hasQuota && (
+                          <div className="mb-1">
+                            <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${host.met_quota ? 'bg-amber-400' : host.on_track === false ? 'bg-red-400' : 'bg-teal-500'}`}
+                                style={{ width: `${progressCapped}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {hasQuota && (
+                          <p className="text-xs text-slate-400">
+                            {host.quota_progress}% of {formatCoins(host.monthly_coin_quota)} quota · Paced: {formatCoins(host.paced_monthly_coins)}
+                          </p>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
