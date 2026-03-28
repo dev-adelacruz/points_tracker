@@ -4,12 +4,14 @@ export interface LoginCredentials {
   password: string;
 }
 
+export type UserRole = "admin" | "emcee" | "host";
+
 export interface AuthResponse {
   token: string;
   user: {
     id: number;
     email: string;
-    // Add other user fields as needed
+    role: UserRole;
   };
   expires_in?: number;
 }
@@ -72,7 +74,7 @@ class AuthService {
     }
   }
 
-  async validateToken(token: string): Promise<boolean> {
+  async validateToken(token: string): Promise<{ user: { id: number; email: string; role: UserRole } } | null> {
     try {
       const response = await fetch(`${this.baseURL}/users/validate_token`, {
         method: 'GET',
@@ -83,15 +85,14 @@ class AuthService {
         },
       });
 
-      console.log('Token validation response status:', response.status);
       if (!response.ok) {
-        console.log('Token validation failed with status:', response.status);
-        return false;
+        return null;
       }
-      return true;
+
+      const data = await response.json();
+      return { user: data.status.data.user };
     } catch (error) {
-      console.error('Token validation error:', error);
-      return false;
+      return null;
     }
   }
 

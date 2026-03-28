@@ -1,9 +1,10 @@
 # frozen_string_literal: true
+
 class Api::V1::Users::RegistrationsController < Devise::RegistrationsController
   def respond_with(current_user, _opts = {})
     if resource.persisted?
       render json: {
-        status: {code: 200, message: 'Signed up successfully.'},
+        status: { code: 200, message: "Signed up successfully." },
         data: UserBlueprint.render_as_hash(current_user)
       }
     else

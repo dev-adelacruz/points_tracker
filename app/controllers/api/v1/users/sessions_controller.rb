@@ -6,8 +6,8 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
     sign_in(resource_name, resource)
 
     render json: {
-      status: { 
-        code: 200, message: 'Logged in successfully.',
+      status: {
+        code: 200, message: "Logged in successfully.",
         data: { user: UserBlueprint.render_as_hash(current_user) }
       }
     }, status: :ok
@@ -15,11 +15,11 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
 
   def destroy
     signed_out = (Devise.sign_out_all_scopes ? sign_out : sign_out(resource_name))
-    
+
     if signed_out
       render json: {
         status: 200,
-        message: 'Logged out successfully.'
+        message: "Logged out successfully."
       }, status: :ok
     else
       render json: {
@@ -28,11 +28,11 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
       }, status: :unproccessable_entity
     end
   end
-  
+
   def respond_with(current_user, _opts = {})
     render json: {
-      status: { 
-        code: 200, message: 'Logged in successfully.',
+      status: {
+        code: 200, message: "Logged in successfully.",
         data: { user: UserBlueprint.render_as_hash(current_user) }
       }
     }, status: :ok
@@ -42,8 +42,8 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
   def validate_token
     if current_user
       render json: {
-        status: { 
-          code: 200, message: 'Token is valid.',
+        status: {
+          code: 200, message: "Token is valid.",
           data: { user: UserBlueprint.render_as_hash(current_user) }
         }
       }, status: :ok

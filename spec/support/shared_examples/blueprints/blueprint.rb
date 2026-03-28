@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 RSpec.shared_examples 'a blueprint' do
   let(:custom_attributes) { {} }
   let(:stringifiable_keys) { {} }
@@ -11,14 +12,14 @@ RSpec.shared_examples 'a blueprint' do
     end
   end
   describe '#render' do
-    it 'renders the correct body' do #rubocop:disable RSpec/ExampleLength
+    it 'renders the correct body' do # rubocop:disable RSpec/ExampleLength
       attributes = if record.respond_to?(:attributes)
                      record.attributes
-                   elsif record.respond_to?(:to_h)
+      elsif record.respond_to?(:to_h)
                      record.to_h
-                   else
+      else
                      JSON.parse(record.to_json, symbolize_names: true)
-                   end
+      end
       expect(result.keys).to match_array(expected_keys)
       expect(result).to match(
         attributes
