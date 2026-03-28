@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from '../../services/authService';
 import { tokenStorage } from '../../services/tokenStorage';
+import type { UserRole } from '../../interfaces/state/userState';
 
 // Async thunks for authentication
 export const loginUser = createAsyncThunk(
@@ -42,13 +43,12 @@ export const checkAuthStatus = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = await tokenStorage.getToken();
-      
+
       if (token) {
-        const isValid = await authService.validateToken(token);
-        
-        if (isValid) {
-          // For now, return only the token; user data can be fetched separately if needed
-          return { token, user: null };
+        const result = await authService.validateToken(token);
+
+        if (result) {
+          return { token, user: result.user };
         }
       }
       return null;
@@ -61,7 +61,7 @@ export const checkAuthStatus = createAsyncThunk(
 const initialState: UserState = {
   isSignedIn: false,
   token: null,
-  user: null,
+  user: null as { id: number | null; email: string | null; role: UserRole | null } | null,
   isLoading: false,
   error: null
 };

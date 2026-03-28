@@ -15,7 +15,7 @@ RSpec.describe 'Registrations' do
           properties: {
             email: { type: :string },
             password: { type: :string },
-            password_confirmation: { type: :string },
+            password_confirmation: { type: :string }
           }
         }
 

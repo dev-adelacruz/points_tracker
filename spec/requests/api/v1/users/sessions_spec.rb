@@ -14,7 +14,7 @@ RSpec.describe 'Sessions' do
           type: :object,
           properties: {
             email: { type: :string },
-            password: { type: :string },
+            password: { type: :string }
           }
         }
 
@@ -23,7 +23,7 @@ RSpec.describe 'Sessions' do
             {
               user: {
                 email: 'sample@email.com',
-                password: '12345678',
+                password: '12345678'
               }
             }
           end
