@@ -10,6 +10,11 @@ class Api::V1::LeaderboardController < ApplicationController
 
     host_ids = User.host.where(active: true).pluck(:id)
 
+    if params[:team_id].present?
+      team_member_ids = TeamMembership.where(team_id: params[:team_id]).pluck(:user_id)
+      host_ids &= team_member_ids
+    end
+
     entries_scope = CoinEntry.joins(:session).where(user_id: host_ids)
     entries_scope = entries_scope.where("sessions.date >= ?", params[:date_from]) if params[:date_from].present?
     entries_scope = entries_scope.where("sessions.date <= ?", params[:date_to]) if params[:date_to].present?

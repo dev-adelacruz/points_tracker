@@ -5,11 +5,12 @@ class LeaderboardService {
 
   async getLeaderboard(
     token: string,
-    params?: { date_from?: string; date_to?: string; page?: number; per_page?: number }
+    params?: { date_from?: string; date_to?: string; team_id?: number; page?: number; per_page?: number }
   ): Promise<LeaderboardPage> {
     const url = new URL(`${this.baseURL}/leaderboard`, window.location.origin);
     if (params?.date_from) url.searchParams.set('date_from', params.date_from);
     if (params?.date_to) url.searchParams.set('date_to', params.date_to);
+    if (params?.team_id) url.searchParams.set('team_id', String(params.team_id));
     if (params?.page) url.searchParams.set('page', String(params.page));
     if (params?.per_page) url.searchParams.set('per_page', String(params.per_page));
 
