@@ -4,8 +4,10 @@ import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
 import { hostService } from '../../services/hostService';
 import { hostCoinHistoryService } from '../../services/hostCoinHistoryService';
+import { earningsSummaryService } from '../../services/earningsSummaryService';
 import type { Host } from '../../interfaces/host';
 import type { HostCoinHistoryEntry } from '../../interfaces/hostCoinHistory';
+import type { EarningsSummary } from '../../interfaces/earningsSummary';
 
 type Preset = 'today' | 'week' | 'month' | 'all';
 
@@ -37,6 +39,8 @@ const HostDashboard: React.FC = () => {
   const [hostsLoading, setHostsLoading] = useState(true);
   const [hostsError, setHostsError] = useState<string | null>(null);
 
+  const [summary, setSummary] = useState<EarningsSummary | null>(null);
+
   const [history, setHistory] = useState<HostCoinHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -53,6 +57,8 @@ const HostDashboard: React.FC = () => {
       .then(setHosts)
       .catch((err: Error) => setHostsError(err.message))
       .finally(() => setHostsLoading(false));
+
+    earningsSummaryService.getEarningsSummary(token).then(setSummary).catch(() => null);
   }, [token]);
 
   const loadHistory = useCallback((filters: { date_from?: string; date_to?: string }) => {
@@ -69,6 +75,11 @@ const HostDashboard: React.FC = () => {
   useEffect(() => {
     if (!showCustom) loadHistory(presetRange(preset));
   }, [preset, showCustom, loadHistory]);
+
+  const selectPreset = (p: Preset) => {
+    setPreset(p);
+    setShowCustom(false);
+  };
 
   const applyCustom = () => {
     loadHistory({ date_from: customFrom || undefined, date_to: customTo || undefined });
@@ -107,6 +118,28 @@ const HostDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Earnings Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {([
+            { key: 'today' as Preset, label: 'Today', value: summary.today },
+            { key: 'week' as Preset, label: 'This Week', value: summary.this_week },
+            { key: 'month' as Preset, label: 'This Month', value: summary.this_month, prominent: true },
+            { key: 'all' as Preset, label: 'All Time', value: summary.all_time },
+          ] as { key: Preset; label: string; value: number; prominent?: boolean }[]).map(({ key, label, value, prominent }) => (
+            <button
+              key={key}
+              onClick={() => selectPreset(key)}
+              className={`rounded-2xl border p-4 text-left transition-all duration-150 active:scale-95 ${!showCustom && preset === key ? 'bg-teal-600 border-teal-600 text-white shadow-md' : prominent ? 'bg-teal-50 border-teal-200 text-teal-900 hover:border-teal-400' : 'bg-white border-slate-100 text-slate-800 hover:border-teal-200 shadow-sm'}`}
+            >
+              <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${!showCustom && preset === key ? 'text-teal-100' : prominent ? 'text-teal-600' : 'text-slate-400'}`}>{label}</p>
+              <p className="text-xl font-bold tabular-nums">{formatCoins(value)}</p>
+              <p className={`text-[10px] mt-0.5 ${!showCustom && preset === key ? 'text-teal-200' : 'text-slate-400'}`}>coins</p>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Coin History */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
@@ -119,7 +152,7 @@ const HostDashboard: React.FC = () => {
           {presets.map(({ key, label }) => (
             <button
               key={key}
-              onClick={() => { setPreset(key); setShowCustom(false); }}
+              onClick={() => selectPreset(key)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${!showCustom && preset === key ? 'bg-teal-600 text-white' : 'text-slate-500 hover:text-slate-800 border border-slate-200 hover:bg-slate-50'}`}
             >
               {label}
