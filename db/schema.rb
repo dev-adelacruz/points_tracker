@@ -10,9 +10,42 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_130002) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_150247) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "session_hosts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "session_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["session_id", "user_id"], name: "index_session_hosts_on_session_id_and_user_id", unique: true
+    t.index ["session_id"], name: "index_session_hosts_on_session_id"
+    t.index ["user_id"], name: "index_session_hosts_on_user_id"
+  end
+
+  create_table "sessions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.date "date", null: false
+    t.integer "session_slot", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_sessions_on_created_by_id"
+    t.index ["date", "session_slot", "team_id"], name: "index_sessions_on_date_slot_team", unique: true
+    t.index ["team_id"], name: "index_sessions_on_team_id"
+  end
+
+  create_table "team_emcee_assignments", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.bigint "team_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["team_id"], name: "index_team_emcee_assignments_on_team_id"
+    t.index ["team_id"], name: "index_team_emcee_assignments_on_team_id_active", unique: true, where: "(active = true)"
+    t.index ["user_id"], name: "index_team_emcee_assignments_on_user_id"
+  end
 
   create_table "team_memberships", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -25,13 +58,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_130002) do
   end
 
   create_table "teams", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
+    t.text "description"
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_teams_on_active"
     t.index ["name"], name: "index_teams_on_name", unique: true
   end
 
   create_table "users", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -41,12 +78,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_130002) do
     t.string "reset_password_token"
     t.integer "role", default: 2, null: false
     t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_users_on_active"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
   end
 
+  add_foreign_key "session_hosts", "sessions"
+  add_foreign_key "session_hosts", "users"
+  add_foreign_key "sessions", "teams"
+  add_foreign_key "sessions", "users", column: "created_by_id"
+  add_foreign_key "team_emcee_assignments", "teams"
+  add_foreign_key "team_emcee_assignments", "users"
   add_foreign_key "team_memberships", "teams"
   add_foreign_key "team_memberships", "users"
 end
