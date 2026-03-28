@@ -5,9 +5,11 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { hostService } from '../../services/hostService';
 import { hostCoinHistoryService } from '../../services/hostCoinHistoryService';
 import { earningsSummaryService } from '../../services/earningsSummaryService';
+import { leaderboardRankService } from '../../services/leaderboardRankService';
 import type { Host } from '../../interfaces/host';
 import type { HostCoinHistoryEntry } from '../../interfaces/hostCoinHistory';
 import type { EarningsSummary } from '../../interfaces/earningsSummary';
+import type { LeaderboardRank } from '../../interfaces/leaderboardRank';
 
 type Preset = 'today' | 'week' | 'month' | 'all';
 
@@ -40,6 +42,7 @@ const HostDashboard: React.FC = () => {
   const [hostsError, setHostsError] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
+  const [rank, setRank] = useState<LeaderboardRank | null>(null);
 
   const [history, setHistory] = useState<HostCoinHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -59,6 +62,7 @@ const HostDashboard: React.FC = () => {
       .finally(() => setHostsLoading(false));
 
     earningsSummaryService.getEarningsSummary(token).then(setSummary).catch(() => null);
+    leaderboardRankService.getLeaderboardRank(token).then(setRank).catch(() => null);
   }, [token]);
 
   const loadHistory = useCallback((filters: { date_from?: string; date_to?: string }) => {
@@ -111,10 +115,17 @@ const HostDashboard: React.FC = () => {
           <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
             {currentUser?.email?.slice(0, 2).toUpperCase() ?? 'H'}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-800">{currentUser?.email}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-slate-800 truncate">{currentUser?.email}</p>
             <p className="text-xs text-slate-400 capitalize">{currentUser?.role}</p>
           </div>
+          {rank && (
+            <div className="shrink-0 flex flex-col items-center justify-center rounded-xl bg-teal-600 text-white px-3 py-2 min-w-18">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-teal-200">Rank</p>
+              <p className="text-lg font-bold leading-none">#{rank.rank}</p>
+              <p className="text-[10px] text-teal-200 mt-0.5">of {rank.total_hosts}</p>
+            </div>
+          )}
         </div>
       </div>
 
