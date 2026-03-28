@@ -82,4 +82,41 @@ class TeamService {
   }
 }
 
+  async assignEmcee(token: string, teamId: number, userId: number): Promise<{ team_id: number; emcee_id: number; emcee_email: string }> {
+    const response = await fetch(`${this.baseURL}/teams/${teamId}/emcee_assignment`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.status?.message || `Failed to assign emcee with status ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data;
+  }
+
+  async unassignEmcee(token: string, teamId: number): Promise<void> {
+    const response = await fetch(`${this.baseURL}/teams/${teamId}/emcee_assignment`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.status?.message || `Failed to unassign emcee with status ${response.status}`);
+    }
+  }
+}
+
 export const teamService = new TeamService();
