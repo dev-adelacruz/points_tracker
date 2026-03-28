@@ -12,6 +12,11 @@ namespace :v1 do
   end
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
   resources :emcees, only: [ :index ]
+  namespace :emcee do
+    get "team_sessions", to: "team_sessions#index"
+    get "team_host_stats", to: "team_host_stats#index"
+  end
+
   namespace :host do
     get "coin_history", to: "coin_history#show"
     get "earnings_summary", to: "earnings_summary#show"

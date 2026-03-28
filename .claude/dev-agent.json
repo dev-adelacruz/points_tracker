@@ -1,0 +1,9 @@
+{
+  "repo": "dev-adelacruz/points_tracker",
+  "jira_domain": "snapplabs.atlassian.net",
+  "jira_project": "PTRA",
+  "slack_channel": "dev-notifications",
+  "slack_group": "@ADC",
+  "pr_reviewer_team": "drindc24",
+  "pr_milestone": "Untracked"
+}

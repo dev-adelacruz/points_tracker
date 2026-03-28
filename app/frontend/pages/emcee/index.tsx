@@ -7,11 +7,13 @@ import { hostService } from '../../services/hostService';
 import { sessionService } from '../../services/sessionService';
 import { coinEntryService } from '../../services/coinEntryService';
 import { teamSessionService } from '../../services/teamSessionService';
+import { teamHostStatService } from '../../services/teamHostStatService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { CoinEntry } from '../../interfaces/coinEntry';
 import type { TeamSession } from '../../interfaces/teamSession';
+import type { TeamHostStat } from '../../interfaces/teamHostStat';
 
 const formatCoins = (n: number) => n.toLocaleString();
 
@@ -47,6 +49,12 @@ const EmceeDashboard: React.FC = () => {
   const [tsPreset, setTsPreset] = useState<'today' | 'week' | 'month' | 'all'>('month');
   const [expandedSessionId, setExpandedSessionId] = useState<number | null>(null);
 
+  const [hostStats, setHostStats] = useState<TeamHostStat[]>([]);
+  const [hostStatsLoading, setHostStatsLoading] = useState(false);
+  const [hostStatsError, setHostStatsError] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [hsPreset, setHsPreset] = useState<'today' | 'week' | 'month' | 'all'>('month');
+
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -57,7 +65,12 @@ const EmceeDashboard: React.FC = () => {
       hostService.getHosts(token, { active: true }),
       sessionService.getSessions(token),
     ])
-      .then(([t, h, s]) => { setTeams(t); setHosts(h); setSessions(s); })
+      .then(([t, h, s]) => {
+        setTeams(t);
+        setHosts(h);
+        setSessions(s);
+        if (t.length > 0) setSelectedTeamId(t[0].id);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [token]);
@@ -88,6 +101,33 @@ const EmceeDashboard: React.FC = () => {
       .catch((e: Error) => setTeamSessionsError(e.message))
       .finally(() => setTeamSessionsLoading(false));
   }, [token, tsPresetRange]);
+
+  const hsPresetRange = useMemo(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const fmt = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const todayStr = fmt(d);
+    if (hsPreset === 'today') return { date_from: todayStr, date_to: todayStr };
+    if (hsPreset === 'week') {
+      const w = new Date(d); w.setDate(d.getDate() - d.getDay());
+      return { date_from: fmt(w), date_to: todayStr };
+    }
+    if (hsPreset === 'month') {
+      const m = new Date(d.getFullYear(), d.getMonth(), 1);
+      return { date_from: fmt(m), date_to: todayStr };
+    }
+    return {};
+  }, [hsPreset]);
+
+  useEffect(() => {
+    if (!token || !selectedTeamId) return;
+    setHostStatsLoading(true);
+    setHostStatsError(null);
+    teamHostStatService.getTeamHostStats(token, selectedTeamId, hsPresetRange)
+      .then(setHostStats)
+      .catch((e: Error) => setHostStatsError(e.message))
+      .finally(() => setHostStatsLoading(false));
+  }, [token, selectedTeamId, hsPresetRange]);
 
   const openModal = () => {
     setShowModal(true);
@@ -408,7 +448,7 @@ const EmceeDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[100px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-25 text-center"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -504,6 +544,94 @@ const EmceeDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Team Host Performance */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-900">Host Performance</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Coin totals and quota progress for hosts in your teams.</p>
+        </div>
+
+        {/* Team selector + preset filter */}
+        <div className="px-6 pt-4 pb-0 flex flex-wrap items-center gap-2">
+          {teams.filter((t) => t.active).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedTeamId(t.id)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all duration-150 ${
+                selectedTeamId === t.id
+                  ? 'bg-slate-800 border-slate-800 text-white'
+                  : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {t.name}
+            </button>
+          ))}
+          <span className="w-px h-4 bg-slate-200 mx-1" />
+          {(['today', 'week', 'month', 'all'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setHsPreset(p)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all duration-150 ${
+                hsPreset === p
+                  ? 'bg-teal-600 border-teal-600 text-white'
+                  : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {p === 'today' ? 'Today' : p === 'week' ? 'This Week' : p === 'month' ? 'This Month' : 'All Time'}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6">
+          {!selectedTeamId && <p className="text-sm text-slate-400">Select a team above to view host performance.</p>}
+          {selectedTeamId && hostStatsLoading && <p className="text-sm text-slate-400">Loading...</p>}
+          {selectedTeamId && hostStatsError && <p className="text-sm text-red-500">{hostStatsError}</p>}
+          {selectedTeamId && !hostStatsLoading && !hostStatsError && hostStats.length === 0 && (
+            <p className="text-sm text-slate-400">No hosts found for this team.</p>
+          )}
+          {selectedTeamId && !hostStatsLoading && !hostStatsError && hostStats.length > 0 && (
+            <ul className="space-y-3">
+              {hostStats.map((host, idx) => {
+                const belowQuota = host.monthly_coin_quota > 0 && host.quota_progress < 50;
+                const progressCapped = Math.min(host.quota_progress, 100);
+                return (
+                  <li key={host.user_id} className={`rounded-xl border px-4 py-3 ${belowQuota ? 'border-red-200 bg-red-50' : 'border-slate-100 bg-slate-50'}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${idx === 0 ? 'bg-amber-400 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-800 flex-1 truncate">{host.email}</span>
+                      {belowQuota && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">Behind</span>
+                      )}
+                      <span className="text-sm font-bold text-teal-700 shrink-0">{formatCoins(host.total_coins)}</span>
+                    </div>
+                    {host.monthly_coin_quota > 0 && (
+                      <div className="mb-1.5">
+                        <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${belowQuota ? 'bg-red-400' : 'bg-teal-500'}`}
+                            style={{ width: `${progressCapped}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      {host.monthly_coin_quota > 0 ? (
+                        <span>{host.quota_progress}% of {formatCoins(host.monthly_coin_quota)} quota</span>
+                      ) : (
+                        <span>No quota set</span>
+                      )}
+                      <span>{host.sessions_attended} session{host.sessions_attended !== 1 ? 's' : ''}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+
       {/* Coin Entry Modal */}
       {showCoinModal && coinSession && (
         <div
@@ -577,7 +705,7 @@ const EmceeDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isCoinSubmitting}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[100px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-25 text-center"
                 >
                   {isCoinSubmitting ? (
                     <span className="flex items-center justify-center gap-1.5">
