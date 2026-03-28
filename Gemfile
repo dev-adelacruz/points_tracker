@@ -77,7 +77,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "faker"
   gem "pry", "~> 0.15.0"
-  gem "rspec-rails", "~> 6.1.0"
+  gem "rspec-rails", "~> 8.0.4"
   gem "rswag-specs"
   gem "rubocop-ordered_methods", require: false
   gem "rubocop-performance", require: false
