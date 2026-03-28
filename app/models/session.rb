@@ -5,6 +5,7 @@ class Session < ApplicationRecord
   belongs_to :created_by, class_name: "User"
   has_many :session_hosts, dependent: :destroy
   has_many :hosts, through: :session_hosts, source: :user
+  has_many :coin_entries, dependent: :destroy
 
   enum :session_slot, { slot_one: 1, slot_two: 2 }, validate: true
 

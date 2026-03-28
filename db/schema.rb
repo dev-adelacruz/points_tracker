@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_28_150247) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_153722) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "coin_entries", force: :cascade do |t|
+    t.integer "coins", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.bigint "session_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["session_id", "user_id"], name: "index_coin_entries_on_session_id_and_user_id", unique: true
+    t.index ["session_id"], name: "index_coin_entries_on_session_id"
+    t.index ["user_id"], name: "index_coin_entries_on_user_id"
+  end
 
   create_table "session_hosts", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -85,6 +96,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_28_150247) do
     t.index ["role"], name: "index_users_on_role"
   end
 
+  add_foreign_key "coin_entries", "sessions"
+  add_foreign_key "coin_entries", "users"
   add_foreign_key "session_hosts", "sessions"
   add_foreign_key "session_hosts", "users"
   add_foreign_key "sessions", "teams"
