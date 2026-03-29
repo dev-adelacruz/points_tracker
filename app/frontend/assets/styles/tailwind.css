@@ -1,37 +1,46 @@
 @import 'tailwindcss';
 
-/* ── Leaderboard & Page Animations ─────────────────────────── */
+/* ============================================================
+   DESIGN TOKEN SYSTEM — PTRA-43
+   All tokens are registered via @theme so Tailwind v4 generates
+   utility classes (bg-brand, text-body, shadow-brand, etc.)
+   and exposes them as CSS custom properties for direct use.
+   ============================================================ */
 
-@keyframes lb-row-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+@theme {
+  /* ── Brand ─────────────────────────────────────────────── */
+  --color-brand:     #14b8a6;   /* primary teal accent          */
+  --color-brand-dim: #0f766e;   /* hover / muted variant        */
 
-/* Top-3 entrance: scale up from slightly smaller */
-@keyframes lb-top-in {
-  from { opacity: 0; transform: scale(0.92) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
+  /* ── Dark Surfaces ──────────────────────────────────────── */
+  --color-base:     #0f172a;    /* page background (slate-900)  */
+  --color-surface:  #1e293b;    /* card / panel (slate-800)     */
+  --color-elevated: #283548;    /* tooltip / popover layer      */
 
-/* Page-level fade-in on route change */
-@keyframes page-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  /* ── Borders ────────────────────────────────────────────── */
+  --color-line:        #334155; /* default border (slate-700)   */
+  --color-line-subtle: #1e293b; /* hairline border (slate-800)  */
 
-@layer utilities {
-  /* Leaderboard row stagger — delay set via inline style --lb-delay */
-  .animate-lb-row {
-    animation: lb-row-in 0.35s ease both;
-    animation-delay: var(--lb-delay, 0ms);
-  }
-  .animate-lb-top {
-    animation: lb-top-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    animation-delay: var(--lb-delay, 0ms);
-  }
-  .animate-page-fade {
-    animation: page-fade-in 0.25s ease both;
-  }
+  /* ── Text ───────────────────────────────────────────────── */
+  --color-body:  #f1f5f9;       /* primary text (slate-100)     */
+  --color-soft:  #94a3b8;       /* secondary text (slate-400)   */
+  --color-ghost: #64748b;       /* muted / placeholder (slate-500) */
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --color-ok:   #22c55e;        /* success (green-500)          */
+  --color-warn: #f59e0b;        /* warning (amber-500)          */
+  --color-bad:  #ef4444;        /* danger  (red-500)            */
+
+  /* ── Stat Typography Scale ──────────────────────────────── */
+  /* Used for large metric displays on dashboards / stat cards  */
+  --text-stat-xl: 3rem;         /* hero KPI numbers             */
+  --text-stat-lg: 2rem;         /* section-level metrics        */
+  --text-stat-md: 1.5rem;       /* inline stat chips            */
+
+  /* ── Shadows ────────────────────────────────────────────── */
+  --shadow-brand:    0 0 24px rgb(20 184 166 / 0.35);
+  --shadow-surface:  0 1px 3px rgb(0 0 0 / 0.5), 0 4px 12px rgb(0 0 0 / 0.3);
+  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 0.4);
 }
 
 @keyframes gradient-shift {
@@ -54,6 +63,23 @@
   to { width: var(--bar-width); }
 }
 
+/* ── Leaderboard & Page Animations ─────────────────────────── */
+
+@keyframes lb-row-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lb-top-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @layer utilities {
   .animate-gradient-shift {
     background-size: 200% 200%;
@@ -67,6 +93,17 @@
   }
   .animate-bar-fill {
     animation: bar-fill 1s ease-out forwards;
+  }
+  .animate-lb-row {
+    animation: lb-row-in 0.35s ease both;
+    animation-delay: var(--lb-delay, 0ms);
+  }
+  .animate-lb-top {
+    animation: lb-top-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation-delay: var(--lb-delay, 0ms);
+  }
+  .animate-page-fade {
+    animation: page-fade-in 0.25s ease both;
   }
 }
 
