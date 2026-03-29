@@ -8,7 +8,15 @@ RSpec.describe TeamBlueprint do
     let(:record) { create(:team) }
 
     it_behaves_like "a blueprint" do
-      let(:expected_keys) { %i[id name] }
+      let(:expected_keys) { %i[id name description active host_count emcee_email emcee_id members] }
+      let(:custom_attributes) do
+        {
+          host_count: 0,
+          emcee_email: nil,
+          emcee_id: nil,
+          members: []
+        }
+      end
     end
   end
 end

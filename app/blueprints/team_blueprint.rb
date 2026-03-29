@@ -12,4 +12,8 @@ class TeamBlueprint < Blueprinter::Base
   field :emcee_id do |team|
     team.current_emcee&.id
   end
+
+  field :members do |team|
+    team.users.host.map { |u| { id: u.id, email: u.email } }
+  end
 end

@@ -168,12 +168,28 @@ const EmceeDashboard: React.FC = () => {
             <p className="text-sm text-slate-400">You have no teams assigned yet.</p>
           )}
           {!isLoading && !error && teams.length > 0 && (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {teams.map((team) => (
-                <li key={team.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-                  <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
-                  {team.name}
-                  <span className="ml-auto text-xs text-slate-400">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
+                <li key={team.id} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700">
+                    <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
+                    {team.name}
+                    <span className="ml-auto text-xs text-slate-400">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
+                  </div>
+                  {team.members.length > 0 ? (
+                    <ul className="border-t border-slate-100 divide-y divide-slate-100">
+                      {team.members.map((member) => (
+                        <li key={member.id} className="flex items-center gap-2 px-4 py-2">
+                          <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold flex items-center justify-center shrink-0 uppercase">
+                            {member.email.charAt(0)}
+                          </span>
+                          <span className="text-xs text-slate-600 truncate">{member.email}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-4 py-2 border-t border-slate-100 text-xs text-slate-400">No hosts assigned.</p>
+                  )}
                 </li>
               ))}
             </ul>
