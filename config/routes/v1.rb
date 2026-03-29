@@ -15,4 +15,8 @@ namespace :v1 do
   resources :sessions, only: [ :index, :show, :create ] do
     resources :coin_entries, only: [ :index, :create ], module: "sessions"
   end
+
+  namespace :reports do
+    resource :team_totals, only: [ :show ]
+  end
 end
