@@ -154,7 +154,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title = 'Da
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5 motion-safe:animate-page-fade">
           {children}
         </main>
       </div>
