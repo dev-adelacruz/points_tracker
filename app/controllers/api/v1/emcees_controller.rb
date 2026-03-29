@@ -24,6 +24,7 @@ class Api::V1::EmceesController < ApplicationController
   def emcee_data(emcee)
     {
       id: emcee.id,
+      name: emcee.name,
       email: emcee.email,
       teams: emcee.teams.map { |t| { id: t.id, name: t.name } }
     }

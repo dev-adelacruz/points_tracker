@@ -20,6 +20,7 @@ class User < ApplicationRecord
   scope :inactive_hosts, -> { host.where(active: false) }
 
   validates :email, presence: true
+  validates :name, presence: true
   validates :role, presence: true
   validates :active, inclusion: { in: [ true, false ] }
 

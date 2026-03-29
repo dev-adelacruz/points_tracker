@@ -208,7 +208,7 @@ const EmceeDashboard: React.FC = () => {
                     <p className="text-sm font-semibold text-slate-800">
                       {session.date} — {session.session_slot === 'first' ? '1st' : '2nd'} Session
                     </p>
-                    <p className="text-xs text-slate-400">{session.team_name} · {session.host_emails.length} host{session.host_emails.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-400">{session.team_name} · {session.host_ids.length} host{session.host_ids.length !== 1 ? 's' : ''}</p>
                   </div>
                   {session.host_ids.length > 0 && (
                     <button
@@ -419,7 +419,7 @@ const EmceeDashboard: React.FC = () => {
                 )}
                 {coinSession.host_ids.map((hostId, idx) => (
                   <div key={hostId} className="flex items-center gap-3">
-                    <span className="text-xs text-slate-600 flex-1 truncate">{coinSession.host_emails[idx] ?? `Host #${hostId}`}</span>
+                    <span className="text-xs text-slate-600 flex-1 truncate">{coinSession.host_names[idx] ?? `Host #${hostId}`}</span>
                     <input
                       type="number"
                       min="0"

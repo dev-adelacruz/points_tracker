@@ -177,7 +177,7 @@ RSpec.describe "Hosts" do
         }
 
         response(201, "creates host for admin") do
-          let(:params) { { host: { email: "newhost@example.com", password: "password123" } } }
+          let(:params) { { host: { name: "New Host", email: "newhost@example.com", password: "password123" } } }
 
           before { sign_in admin }
 
@@ -189,7 +189,7 @@ RSpec.describe "Hosts" do
         end
 
         response(201, "creates host with team assignment") do
-          let(:params) { { host: { email: "teamhost@example.com", password: "password123" }, team_id: team.id } }
+          let(:params) { { host: { name: "Team Host", email: "teamhost@example.com", password: "password123" }, team_id: team.id } }
 
           before { sign_in admin }
 

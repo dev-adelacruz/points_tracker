@@ -8,7 +8,10 @@ RSpec.describe HostBlueprint do
     let(:record) { create(:user, :host) }
 
     it_behaves_like "a blueprint" do
-      let(:expected_keys) { %i[id email] }
+      let(:expected_keys) { %i[id name email active team_id team_name] }
+      let(:custom_attributes) do
+        { team_id: record.primary_team&.id, team_name: record.primary_team&.name }
+      end
     end
   end
 end

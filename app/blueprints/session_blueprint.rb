@@ -25,7 +25,7 @@ class SessionBlueprint < Blueprinter::Base
     session.hosts.pluck(:id)
   end
 
-  field :host_emails do |session|
-    session.hosts.pluck(:email)
+  field :host_names do |session|
+    session.hosts.pluck(:name)
   end
 end

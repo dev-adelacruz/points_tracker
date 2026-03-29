@@ -30,10 +30,10 @@ const HostDashboard: React.FC = () => {
         <p className="text-xs text-slate-400 mt-0.5">Your account details.</p>
         <div className="mt-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-            {currentUser?.email?.slice(0, 2).toUpperCase() ?? 'H'}
+            {currentUser?.name?.slice(0, 2).toUpperCase() ?? 'H'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800">{currentUser?.email}</p>
+            <p className="text-sm font-semibold text-slate-800">{currentUser?.name}</p>
             <p className="text-xs text-slate-400 capitalize">{currentUser?.role}</p>
           </div>
         </div>

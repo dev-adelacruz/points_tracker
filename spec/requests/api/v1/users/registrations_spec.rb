@@ -23,6 +23,7 @@ RSpec.describe 'Registrations' do
           let(:params) do
             {
               user: {
+                name: 'Sample User',
                 email: 'sample@email.com',
                 password: '12345678',
                 password_confirmation: '12345678'
@@ -43,6 +44,7 @@ RSpec.describe 'Registrations' do
           let(:params) do
             {
               user: {
+                name: 'Sample User',
                 email: 'sample.com',
                 password: '12345678',
                 password_confirmation: '12345678'
@@ -62,6 +64,7 @@ RSpec.describe 'Registrations' do
           let(:params) do
             {
               user: {
+                name: 'Sample User',
                 email: 'sample@email.com',
                 password: '12345678',
                 password_confirmation: '123456789'
@@ -81,6 +84,7 @@ RSpec.describe 'Registrations' do
           let(:params) do
             {
               user: {
+                name: 'Sample User',
                 email: 'sample@email.com',
                 password: '12345678',
                 password_confirmation: '12345678'
@@ -89,7 +93,7 @@ RSpec.describe 'Registrations' do
           end
 
           before do
-            create(:user, email: 'sample@email.com', password: '12345678', password_confirmation: '12345678')
+            create(:user, name: 'Sample User', email: 'sample@email.com', password: '12345678', password_confirmation: '12345678')
           end
 
           run_test! do |response|

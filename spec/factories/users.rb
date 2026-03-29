@@ -3,6 +3,7 @@
 FactoryBot.define do
   factory :user do
     company { Company.first || create(:company) }
+    name { Faker::Name.name }
     email { Faker::Internet.email }
     password { SecureRandom.hex }
     role { :host }

@@ -3,7 +3,7 @@
 class HostBlueprint < Blueprinter::Base
   identifier :id
 
-  fields :email, :active
+  fields :name, :email, :active
 
   field :team_id do |host|
     host.primary_team&.id
