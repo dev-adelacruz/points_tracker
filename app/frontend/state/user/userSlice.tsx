@@ -61,7 +61,7 @@ export const checkAuthStatus = createAsyncThunk(
 const initialState: UserState = {
   isSignedIn: false,
   token: null,
-  user: null as { id: number | null; email: string | null; role: UserRole | null } | null,
+  user: null as { id: number | null; name: string | null; email: string | null; role: UserRole | null } | null,
   isLoading: false,
   error: null
 };

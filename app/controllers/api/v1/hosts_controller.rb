@@ -89,11 +89,11 @@ class Api::V1::HostsController < ApplicationController
   end
 
   def host_params
-    params.require(:host).permit(:email, :password)
+    params.require(:host).permit(:name, :email, :password)
   end
 
   def update_host_params
-    params.require(:host).permit(:email, :password)
+    params.require(:host).permit(:name, :email, :password)
   end
 
   def assign_team(host, team_id)

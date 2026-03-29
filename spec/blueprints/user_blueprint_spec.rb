@@ -8,7 +8,7 @@ RSpec.describe UserBlueprint do
     let(:record) { create(:user) }
 
     it_behaves_like 'a blueprint' do
-      let(:expected_keys) { %i[email id role] }
+      let(:expected_keys) { %i[id name email role] }
     end
   end
 end

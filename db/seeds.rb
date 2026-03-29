@@ -10,3 +10,12 @@ Session.where(company_id: nil).update_all(company_id: company.id)
 CoinEntry.where(company_id: nil).update_all(company_id: company.id)
 
 puts "Seeded company: #{company.name} (id=#{company.id})"
+
+# Backfill names for existing users that don't have one
+User.where(name: "").find_each do |user|
+  local_part = user.email.split("@").first
+  generated_name = local_part.gsub(/[._\-+]/, " ").split.map(&:capitalize).join(" ")
+  user.update_columns(name: generated_name)
+end
+
+puts "Backfilled names for users with blank name"

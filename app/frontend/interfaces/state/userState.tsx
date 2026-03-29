@@ -5,6 +5,7 @@ interface UserState {
   token: string | null;
   user: {
     id: number | null;
+    name: string | null;
     email: string | null;
     role: UserRole | null;
   } | null;

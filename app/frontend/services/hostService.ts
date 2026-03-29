@@ -46,7 +46,7 @@ class HostService {
     return body.data as Host;
   }
 
-  async createHost(token: string, params: { email: string; password: string; team_id?: number }): Promise<Host> {
+  async createHost(token: string, params: { name: string; email: string; password: string; team_id?: number }): Promise<Host> {
     const { team_id, ...hostParams } = params;
     const response = await fetch(`${this.baseURL}/hosts`, {
       method: 'POST',
@@ -67,7 +67,7 @@ class HostService {
     return body.data as Host;
   }
 
-  async updateHost(token: string, id: number, params: { email?: string; password?: string; team_id?: number | null }): Promise<Host> {
+  async updateHost(token: string, id: number, params: { name?: string; email?: string; password?: string; team_id?: number | null }): Promise<Host> {
     const { team_id, ...hostParams } = params;
     const response = await fetch(`${this.baseURL}/hosts/${id}`, {
       method: 'PATCH',

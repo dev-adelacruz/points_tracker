@@ -134,6 +134,7 @@ const AdminDashboard: React.FC = () => {
   const [hostsError, setHostsError] = useState<string | null>(null);
   const [showHostModal, setShowHostModal] = useState(false);
   const [editingHost, setEditingHost] = useState<Host | null>(null);
+  const [hostFormName, setHostFormName] = useState('');
   const [hostFormEmail, setHostFormEmail] = useState('');
   const [hostFormPassword, setHostFormPassword] = useState('');
   const [hostFormTeamId, setHostFormTeamId] = useState('');
@@ -196,11 +197,11 @@ const AdminDashboard: React.FC = () => {
 
   // ---- Host handlers ----
   const openCreateHost = () => {
-    setEditingHost(null); setHostFormEmail(''); setHostFormPassword(''); setHostFormTeamId(''); setHostFormError(null);
+    setEditingHost(null); setHostFormName(''); setHostFormEmail(''); setHostFormPassword(''); setHostFormTeamId(''); setHostFormError(null);
     setShowHostModal(true);
   };
   const openEditHost = (h: Host) => {
-    setEditingHost(h); setHostFormEmail(h.email); setHostFormPassword(''); setHostFormTeamId(h.team_id ? String(h.team_id) : ''); setHostFormError(null);
+    setEditingHost(h); setHostFormName(h.name); setHostFormEmail(h.email); setHostFormPassword(''); setHostFormTeamId(h.team_id ? String(h.team_id) : ''); setHostFormError(null);
     setShowHostModal(true);
   };
   const closeHostModal = useCallback(() => { setShowHostModal(false); }, []);
@@ -212,6 +213,7 @@ const AdminDashboard: React.FC = () => {
     try {
       if (editingHost) {
         const updated = await hostService.updateHost(token, editingHost.id, {
+          name: hostFormName,
           email: hostFormEmail,
           ...(hostFormPassword ? { password: hostFormPassword } : {}),
           team_id: hostFormTeamId ? Number(hostFormTeamId) : null,
@@ -219,6 +221,7 @@ const AdminDashboard: React.FC = () => {
         setHosts((prev) => prev.map((h) => h.id === updated.id ? updated : h));
       } else {
         const created = await hostService.createHost(token, {
+          name: hostFormName,
           email: hostFormEmail,
           password: hostFormPassword,
           ...(hostFormTeamId ? { team_id: Number(hostFormTeamId) } : {}),
@@ -353,7 +356,7 @@ const AdminDashboard: React.FC = () => {
                   {activeHosts.map((host) => (
                     <li key={host.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{host.email}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{host.name}</p>
                         {host.team_name && <p className="text-xs text-slate-400">{host.team_name}</p>}
                       </div>
                       <button onClick={() => openEditHost(host)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0">Edit</button>
@@ -368,7 +371,7 @@ const AdminDashboard: React.FC = () => {
                   <ul className="space-y-2">
                     {inactiveHosts.map((host) => (
                       <li key={host.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 opacity-50">
-                        <p className="text-sm font-semibold text-slate-500 line-through flex-1">{host.email}</p>
+                        <p className="text-sm font-semibold text-slate-500 line-through flex-1">{host.name}</p>
                         <span className="text-xs text-slate-400">Deactivated</span>
                       </li>
                     ))}
@@ -394,7 +397,7 @@ const AdminDashboard: React.FC = () => {
                   {emcees.map((emcee) => (
                     <li key={emcee.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{emcee.email}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{emcee.name}</p>
                         {emcee.teams.length > 0
                           ? <p className="text-xs text-slate-400">{emcee.teams.map((t) => t.name).join(', ')}</p>
                           : <p className="text-xs text-slate-400">No team assigned</p>}
@@ -467,13 +470,25 @@ const AdminDashboard: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
             <h2 className="text-sm font-bold text-slate-900">{editingHost ? 'Edit Host' : 'New Host'}</h2>
-            <p className="text-xs text-slate-400 mt-0.5">{editingHost ? `Editing ${editingHost.email}` : 'Create a new host account.'}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{editingHost ? `Editing ${editingHost.name}` : 'Create a new host account.'}</p>
           </div>
           <CloseButton onClick={closeHostModal} />
         </div>
         <form onSubmit={handleHostSubmit}>
           <div className="px-6 py-5 space-y-3">
             {hostFormError && <FormError message={hostFormError} />}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Juan dela Cruz"
+                value={hostFormName}
+                onChange={(e) => setHostFormName(e.target.value)}
+                required
+                autoFocus
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1.5">Email</label>
               <input
@@ -482,7 +497,6 @@ const AdminDashboard: React.FC = () => {
                 value={hostFormEmail}
                 onChange={(e) => setHostFormEmail(e.target.value)}
                 required
-                autoFocus
                 className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
               />
             </div>
@@ -525,7 +539,7 @@ const AdminDashboard: React.FC = () => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div>
             <h2 className="text-sm font-bold text-slate-900">Assign Team</h2>
-            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[240px]">{assigningEmcee?.email}</p>
+            <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[240px]">{assigningEmcee?.name}</p>
           </div>
           <CloseButton onClick={closeAssign} />
         </div>

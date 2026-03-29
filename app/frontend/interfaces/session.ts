@@ -6,5 +6,5 @@ export interface Session {
   team_name: string;
   created_by_id: number;
   host_ids: number[];
-  host_emails: string[];
+  host_names: string[];
 }
