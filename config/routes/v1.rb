@@ -17,6 +17,7 @@ namespace :v1 do
   end
 
   namespace :reports do
+    resource :period_comparison, only: [ :show ]
     resource :team_totals, only: [ :show ]
   end
 end
