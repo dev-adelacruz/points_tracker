@@ -1,9 +1,12 @@
-# This file should ensure the existence of records required to run the application in every environment (production,
-# development, test). The code here should be idempotent so that it can be executed at any point in every environment.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Example:
-#
-#   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
-#     MovieGenre.find_or_create_by!(name: genre_name)
-#   end
+# frozen_string_literal: true
+
+# Default company — single-tenant setup
+company = Company.find_or_create_by!(name: "Default Company")
+
+# Backfill company_id for any existing records (safe to re-run)
+Team.where(company_id: nil).update_all(company_id: company.id)
+User.where(company_id: nil).update_all(company_id: company.id)
+Session.where(company_id: nil).update_all(company_id: company.id)
+CoinEntry.where(company_id: nil).update_all(company_id: company.id)
+
+puts "Seeded company: #{company.name} (id=#{company.id})"

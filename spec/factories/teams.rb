@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :team do
+    company { Company.first || create(:company) }
     name { Faker::Team.name }
     description { nil }
     active { true }

@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class Api::V1::Users::RegistrationsController < Devise::RegistrationsController
+  def build_resource(hash = {})
+    super(hash.merge(company: Company.first))
+  end
+
   def respond_with(current_user, _opts = {})
     if resource.persisted?
       render json: {

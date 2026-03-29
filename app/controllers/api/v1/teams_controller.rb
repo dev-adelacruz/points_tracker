@@ -16,7 +16,7 @@ class Api::V1::TeamsController < ApplicationController
   end
 
   def create
-    team = Team.new(team_params)
+    team = current_company.teams.build(team_params)
 
     if team.save
       render json: {

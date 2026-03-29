@@ -8,7 +8,11 @@ class Api::V1::SessionsController < ApplicationController
   before_action :set_session, only: [ :show ]
 
   def index
-    sessions = current_user.admin? ? Session.all : Session.where(team_id: current_user.teams.pluck(:id))
+    sessions = if current_user.admin?
+      current_company.sessions
+    else
+      current_company.sessions.where(team_id: current_user.teams.pluck(:id))
+    end
     sessions = sessions.order(date: :desc)
 
     render json: {
@@ -28,7 +32,7 @@ class Api::V1::SessionsController < ApplicationController
     mapped = session_params.to_h.tap do |p|
       p["session_slot"] = p["session_slot"] == "first" ? "slot_one" : "slot_two" if p.key?("session_slot")
     end
-    session = Session.new(mapped.merge(created_by: current_user))
+    session = current_company.sessions.build(mapped.merge(created_by: current_user))
 
     if session.save
       assign_hosts(session, params[:host_ids])

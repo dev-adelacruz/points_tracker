@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class CoinEntry < ApplicationRecord
+  belongs_to :company, optional: true
   belongs_to :session
   belongs_to :user
 
