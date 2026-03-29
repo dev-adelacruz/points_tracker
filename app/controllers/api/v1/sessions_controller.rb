@@ -66,7 +66,7 @@ class Api::V1::SessionsController < ApplicationController
   def assign_hosts(session, host_ids)
     return unless host_ids.is_a?(Array) && host_ids.any?
 
-    hosts = User.host.where(id: host_ids)
+    hosts = User.host.joins(:teams).where(id: host_ids, teams: { id: session.team_id })
     hosts.each do |host|
       session.session_hosts.find_or_create_by(user: host)
     end

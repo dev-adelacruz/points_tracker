@@ -91,7 +91,10 @@ RSpec.describe "Sessions" do
         response(201, "creates session for emcee") do
           let(:params) { { session: { date: Date.current.to_s, session_slot: "first", team_id: team.id }, host_ids: [ host1.id ] } }
 
-          before { sign_in emcee }
+          before do
+            create(:team_membership, user: host1, team: team)
+            sign_in emcee
+          end
 
           run_test! do
             expect(response).to have_http_status :created
@@ -109,6 +112,27 @@ RSpec.describe "Sessions" do
           run_test! do
             expect(response).to have_http_status :created
             expect(json_response[:data][:session_slot]).to eq("second")
+          end
+        end
+
+        response(201, "excludes hosts not belonging to the session team") do
+          let(:other_team) { create(:team) }
+          let(:other_host) { create(:user, :host) }
+
+          before do
+            create(:team_membership, user: host1, team: team)
+            create(:team_membership, user: other_host, team: other_team)
+            sign_in emcee
+          end
+
+          let(:params) do
+            { session: { date: Date.current.to_s, session_slot: "first", team_id: team.id }, host_ids: [ host1.id, other_host.id ] }
+          end
+
+          run_test! do
+            expect(response).to have_http_status :created
+            expect(json_response[:data][:host_ids]).to include(host1.id)
+            expect(json_response[:data][:host_ids]).not_to include(other_host.id)
           end
         end
 
