@@ -8,6 +8,8 @@ module TeamScoped
   def current_teams
     return current_company.teams if current_user.admin?
 
+    return current_user.assigned_teams.where(company_id: current_company.id) if current_user.emcee?
+
     current_user.teams.where(company_id: current_company.id)
   end
 

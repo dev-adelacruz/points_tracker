@@ -14,6 +14,9 @@ class User < ApplicationRecord
   has_many :team_memberships, dependent: :destroy
   has_many :teams, through: :team_memberships
 
+  has_many :team_emcee_assignments, dependent: :destroy
+  has_many :assigned_teams, through: :team_emcee_assignments, source: :team
+
   enum :role, { admin: 0, emcee: 1, host: 2 }, validate: true
 
   scope :active_hosts, -> { host.where(active: true) }
