@@ -14,6 +14,6 @@ class TeamBlueprint < Blueprinter::Base
   end
 
   field :members do |team|
-    team.users.host.map { |u| { id: u.id, email: u.email } }
+    team.users.host.map { |u| { id: u.id, name: u.name } }
   end
 end

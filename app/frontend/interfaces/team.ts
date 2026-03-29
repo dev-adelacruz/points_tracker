@@ -1,6 +1,6 @@
 export interface TeamMember {
   id: number;
-  email: string;
+  name: string;
 }
 
 export interface Team {

@@ -181,9 +181,9 @@ const EmceeDashboard: React.FC = () => {
                       {team.members.map((member) => (
                         <li key={member.id} className="flex items-center gap-2 px-4 py-2">
                           <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold flex items-center justify-center shrink-0 uppercase">
-                            {member.email.charAt(0)}
+                            {member.name.charAt(0)}
                           </span>
-                          <span className="text-xs text-slate-600 truncate">{member.email}</span>
+                          <span className="text-xs text-slate-600 truncate">{member.name}</span>
                         </li>
                       ))}
                     </ul>
