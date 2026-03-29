@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Session < ApplicationRecord
+  belongs_to :company, optional: true
   belongs_to :team
   belongs_to :created_by, class_name: "User"
   has_many :session_hosts, dependent: :destroy

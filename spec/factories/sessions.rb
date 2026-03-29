@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :session do
+    company { Company.first || create(:company) }
     date { Date.current }
     session_slot { :slot_one }
     association :team

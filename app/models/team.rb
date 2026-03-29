@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Team < ApplicationRecord
+  belongs_to :company, optional: true
+
   has_many :team_memberships, dependent: :destroy
   has_many :users, through: :team_memberships
   has_many :team_emcee_assignments, dependent: :destroy

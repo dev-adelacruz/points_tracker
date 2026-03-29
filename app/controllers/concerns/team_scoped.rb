@@ -6,9 +6,9 @@ module TeamScoped
   private
 
   def current_teams
-    return Team.all if current_user.admin?
+    return current_company.teams if current_user.admin?
 
-    current_user.teams
+    current_user.teams.where(company_id: current_company.id)
   end
 
   def authorize_team_access!(team)

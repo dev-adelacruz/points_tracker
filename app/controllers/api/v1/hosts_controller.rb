@@ -10,7 +10,8 @@ class Api::V1::HostsController < ApplicationController
   before_action -> { authorize_host_access!(@host) }, only: [ :show ]
 
   def index
-    hosts = params[:team_id] ? User.host.joins(:teams).where(teams: { id: params[:team_id] }) : User.host
+    hosts = current_company.users.host
+    hosts = hosts.joins(:teams).where(teams: { id: params[:team_id] }) if params[:team_id]
     hosts = hosts.where(active: params[:active] == "true") if params.key?(:active)
 
     render json: {
@@ -27,7 +28,7 @@ class Api::V1::HostsController < ApplicationController
   end
 
   def create
-    host = User.new(host_params.merge(role: :host))
+    host = current_company.users.build(host_params.merge(role: :host))
 
     if host.save
       assign_team(host, params[:team_id]) if params[:team_id].present?
@@ -83,7 +84,7 @@ class Api::V1::HostsController < ApplicationController
   end
 
   def set_host
-    @host = User.host.find_by(id: params[:id])
+    @host = current_company.users.host.find_by(id: params[:id])
     render json: { status: 404, message: "Host not found" }, status: :not_found unless @host
   end
 
