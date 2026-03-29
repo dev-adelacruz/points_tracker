@@ -300,7 +300,7 @@ const EmceeDashboard: React.FC = () => {
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Team</label>
                   <select
                     value={formTeamId}
-                    onChange={(e) => setFormTeamId(e.target.value)}
+                    onChange={(e) => { setFormTeamId(e.target.value); setFormHostIds([]); }}
                     required
                     className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
                   >
@@ -311,37 +311,40 @@ const EmceeDashboard: React.FC = () => {
                   </select>
                 </div>
 
-                {hosts.length > 0 && (
-                  <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                      Participating Hosts
-                      {formHostIds.length > 0 && (
-                        <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700">
-                          {formHostIds.length} selected
-                        </span>
-                      )}
-                    </label>
-                    <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
-                      {hosts.map((host) => (
-                        <label
-                          key={host.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${formHostIds.includes(host.id) ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={formHostIds.includes(host.id)}
-                            onChange={() => toggleHost(host.id)}
-                            className="rounded accent-teal-600"
-                          />
-                          <span className="text-sm text-slate-700 truncate flex-1">{host.email}</span>
-                          {host.team_name && (
-                            <span className="text-xs text-slate-400 shrink-0">{host.team_name}</span>
-                          )}
-                        </label>
-                      ))}
+                {formTeamId && (() => {
+                  const teamHosts = hosts.filter((h) => h.team_id === Number(formTeamId));
+                  return (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                        Participating Hosts
+                        {formHostIds.length > 0 && (
+                          <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700">
+                            {formHostIds.length} selected
+                          </span>
+                        )}
+                      </label>
+                      <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 divide-y divide-slate-100">
+                        {teamHosts.length === 0 && (
+                          <p className="px-3 py-2.5 text-sm text-slate-400">No hosts on this team.</p>
+                        )}
+                        {teamHosts.map((host) => (
+                          <label
+                            key={host.id}
+                            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${formHostIds.includes(host.id) ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formHostIds.includes(host.id)}
+                              onChange={() => toggleHost(host.id)}
+                              className="rounded accent-teal-600"
+                            />
+                            <span className="text-sm text-slate-700 truncate flex-1">{host.email}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Footer */}
