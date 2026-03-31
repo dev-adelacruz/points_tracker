@@ -4,7 +4,12 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../state/store';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
-import AdminDashboard from '../pages/admin';
+import AdminLayout from '../components/AdminLayout';
+import AdminIndex from '../pages/admin';
+import TeamsPage from '../pages/admin/TeamsPage';
+import HostsPage from '../pages/admin/HostsPage';
+import EmceesPage from '../pages/admin/EmceesPage';
+import SessionsPage from '../pages/admin/SessionsPage';
 import EmceeDashboard from '../pages/emcee';
 import HostDashboard from '../pages/host';
 import LoginPage from '../pages/login';
@@ -40,10 +45,16 @@ const AppRoutes: React.FC = () => {
           path="/admin"
           element={
             <RoleProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
+              <AdminLayout />
             </RoleProtectedRoute>
           }
-        />
+        >
+          <Route index element={<AdminIndex />} />
+          <Route path="teams" element={<TeamsPage />} />
+          <Route path="hosts" element={<HostsPage />} />
+          <Route path="emcees" element={<EmceesPage />} />
+          <Route path="sessions" element={<SessionsPage />} />
+        </Route>
 
         <Route
           path="/emcee"
