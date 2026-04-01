@@ -5,12 +5,15 @@ import { RootState } from '../state/store';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RoleProtectedRoute from '../components/RoleProtectedRoute';
 import AdminLayout from '../components/AdminLayout';
+import EmceeLayout from '../components/EmceeLayout';
 import AdminIndex from '../pages/admin';
 import TeamsPage from '../pages/admin/TeamsPage';
 import HostsPage from '../pages/admin/HostsPage';
 import EmceesPage from '../pages/admin/EmceesPage';
 import SessionsPage from '../pages/admin/SessionsPage';
 import EmceeDashboard from '../pages/emcee';
+import EmceeSessionsPage from '../pages/emcee/SessionsPage';
+import EmceeTeamsPage from '../pages/emcee/TeamsPage';
 import HostDashboard from '../pages/host';
 import LoginPage from '../pages/login';
 
@@ -60,10 +63,14 @@ const AppRoutes: React.FC = () => {
           path="/emcee"
           element={
             <RoleProtectedRoute allowedRoles={['emcee']}>
-              <EmceeDashboard />
+              <EmceeLayout />
             </RoleProtectedRoute>
           }
-        />
+        >
+          <Route index element={<EmceeDashboard />} />
+          <Route path="sessions" element={<EmceeSessionsPage />} />
+          <Route path="teams" element={<EmceeTeamsPage />} />
+        </Route>
 
         <Route
           path="/host"
