@@ -4,11 +4,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
 import {
-  Users, UserCheck, Mic, Calendar,
+  Users, UserCheck, Mic, Calendar, LayoutDashboard,
   LogOut, Bell, ChevronDown, Zap, Menu, X, Settings, User,
 } from 'lucide-react';
 
 const ADMIN_NAV_ITEMS = [
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/admin' },
   { label: 'Teams', icon: Users, to: '/admin/teams' },
   { label: 'Hosts', icon: UserCheck, to: '/admin/hosts' },
   { label: 'Emcees', icon: Mic, to: '/admin/emcees' },
