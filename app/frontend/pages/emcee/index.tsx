@@ -42,8 +42,9 @@ const EmceeDashboard: React.FC = () => {
   const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
   const now = new Date();
-  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const today = now.toISOString().split('T')[0];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const startOfMonth = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
   useEffect(() => {
     if (!token) return;
@@ -141,7 +142,8 @@ const EmceeDashboard: React.FC = () => {
       setSessions((prev) =>
         prev.map((s) => s.id === coinSession.id ? { ...s, coin_total: total } : s)
       );
-      reportService.getTeamTotals(token, startOfMonth, today).then(setTeamTotals).catch(() => {});
+      const updatedTotals = await reportService.getTeamTotals(token, startOfMonth, today).catch(() => null);
+      if (updatedTotals) setTeamTotals(updatedTotals);
       closeCoinModal();
     } catch (err: any) {
       setCoinError(err.message);
