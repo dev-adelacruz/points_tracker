@@ -13,7 +13,8 @@ RSpec.describe "Emcee::TeamHostStats" do
   let(:session) { create(:session, team: team, created_by: emcee, date: Date.current) }
 
   before do
-    create(:team_membership, user: emcee, team: team)
+    # Emcee is assigned to the team via TeamEmceeAssignment (not TeamMembership)
+    create(:team_emcee_assignment, user: emcee, team: team)
     create(:team_membership, user: host1, team: team)
     create(:team_membership, user: host2, team: team)
   end
@@ -41,6 +42,7 @@ RSpec.describe "Emcee::TeamHostStats" do
             data = json_response[:data]
             expect(data.length).to eq(2)
             expect(data.first[:user_id]).to eq(host1.id)
+            expect(data.first[:name]).to eq(host1.name)
             expect(data.first[:total_coins]).to eq(60_000)
             expect(data.first[:monthly_coin_quota]).to eq(100_000)
             expect(data.first[:quota_progress]).to eq(60.0)
@@ -88,7 +90,7 @@ RSpec.describe "Emcee::TeamHostStats" do
           end
         end
 
-        response(403, "returns forbidden for a team not belonging to the emcee") do
+        response(403, "returns forbidden for a team not assigned to the emcee") do
           let(:team_id) { other_team.id }
 
           before { sign_in emcee }

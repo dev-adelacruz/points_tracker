@@ -1,6 +1,6 @@
 export interface TeamHostStat {
   user_id: number;
-  email: string;
+  name: string;
   total_coins: number;
   monthly_coin_quota: number;
   quota_progress: number;
