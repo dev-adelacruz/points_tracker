@@ -12,7 +12,7 @@ RSpec.describe "Sessions::CoinEntries" do
   let(:session) { create(:session, team: team, created_by: emcee, date: Date.current) }
 
   before do
-    create(:team_membership, user: emcee, team: team)
+    create(:team_emcee_assignment, user: emcee, team: team)
     session.session_hosts.create!(user: host1)
     session.session_hosts.create!(user: host2)
   end

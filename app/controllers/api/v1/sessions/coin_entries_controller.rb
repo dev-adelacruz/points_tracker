@@ -67,7 +67,9 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
 
     return if current_user.admin?
 
-    unless current_user.teams.exists?(id: @session.team_id) || @session.hosts.exists?(id: current_user.id)
+    unless current_user.teams.exists?(id: @session.team_id) ||
+        current_user.assigned_teams.exists?(id: @session.team_id) ||
+        @session.hosts.exists?(id: current_user.id)
       render json: { status: 403, message: "Forbidden" }, status: :forbidden
     end
   end
