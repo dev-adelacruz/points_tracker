@@ -11,7 +11,7 @@ RSpec.describe "Sessions" do
   let(:team) { create(:team) }
 
   before do
-    create(:team_membership, user: emcee, team: team)
+    create(:team_emcee_assignment, user: emcee, team: team)
   end
 
   describe "#index" do
@@ -39,6 +39,19 @@ RSpec.describe "Sessions" do
             create(:session, team: team, created_by: emcee, date: Date.current)
             other_emcee = create(:user, :emcee)
             create(:session, team: other_team, created_by: other_emcee, date: Date.current)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data].length).to eq(1)
+            expect(json_response[:data].first[:team_id]).to eq(team.id)
+          end
+        end
+
+        response(200, "returns sessions for emcee assigned via team_emcee_assignment (not team membership)") do
+          before do
+            create(:session, team: team, created_by: emcee, date: Date.current)
             sign_in emcee
           end
 
