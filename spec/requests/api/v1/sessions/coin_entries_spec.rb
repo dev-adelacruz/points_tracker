@@ -54,6 +54,24 @@ RSpec.describe "Sessions::CoinEntries" do
           end
         end
 
+        response(200, "returns entries for emcee who created a session for another team") do
+          let(:other_team) { create(:team) }
+          let(:other_session) { create(:session, team: other_team, created_by: emcee, date: Date.current) }
+          let(:session_id) { other_session.id }
+
+          before do
+            other_session.session_hosts.create!(user: host1)
+            create(:coin_entry, session: other_session, user: host1, coins: 7_000)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data].length).to eq(1)
+            expect(json_response[:data].first[:coins]).to eq(7_000)
+          end
+        end
+
         response(403, "returns forbidden for emcee on other team's session") do
           let(:other_emcee) { create(:user, :emcee) }
           let(:session_id) { session.id }
@@ -124,6 +142,23 @@ RSpec.describe "Sessions::CoinEntries" do
             expect(response).to have_http_status :created
             expect(json_response[:data].length).to eq(2)
             expect(json_response[:data].map { |e| e[:coins] }).to contain_exactly(15_000, 0)
+          end
+        end
+
+        response(201, "saves entries for emcee who created a session for another team") do
+          let(:other_team) { create(:team) }
+          let(:other_session) { create(:session, team: other_team, created_by: emcee, date: Date.current) }
+          let(:session_id) { other_session.id }
+          let(:params) { { entries: [ { user_id: host1.id, coins: 12_000 } ] } }
+
+          before do
+            other_session.session_hosts.create!(user: host1)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status :created
+            expect(json_response[:data].first[:coins]).to eq(12_000)
           end
         end
 
