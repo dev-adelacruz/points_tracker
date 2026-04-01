@@ -1,21 +1,25 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
-import DashboardLayout from '../../components/DashboardLayout';
 import { teamService } from '../../services/teamService';
 import { hostService } from '../../services/hostService';
 import { sessionService } from '../../services/sessionService';
 import { coinEntryService } from '../../services/coinEntryService';
+import { reportService } from '../../services/reportService';
 import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
+import type { TeamTotalsRow } from '../../interfaces/teamTotals';
+import { Users, UserCheck, Calendar, Zap } from 'lucide-react';
 
 const EmceeDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const currentUser = useSelector((state: RootState) => state.user.user);
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [hosts, setHosts] = useState<Host[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,33 +44,36 @@ const EmceeDashboard: React.FC = () => {
   useEffect(() => {
     if (!token) return;
 
+    const now = new Date();
+    const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const todayStr = now.toISOString().split('T')[0];
+
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token, { active: true }),
       sessionService.getSessions(token),
+      reportService.getTeamTotals(token, startOfMonth, todayStr),
     ])
-      .then(([t, h, s]) => { setTeams(t); setHosts(h); setSessions(s); })
+      .then(([t, h, s, totals]) => {
+        setTeams(t);
+        setHosts(h);
+        setSessions(s);
+        setTeamTotals(totals);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
   }, [token]);
 
+  // --- Session modal ---
   const openModal = () => {
+    setFormDate(''); setFormSlot('first'); setFormTeamId(''); setFormHostIds([]); setFormError(null);
     setShowModal(true);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setIsModalVisible(true));
-    });
+    requestAnimationFrame(() => { requestAnimationFrame(() => setIsModalVisible(true)); });
   };
 
   const closeModal = useCallback(() => {
     setIsModalVisible(false);
-    setTimeout(() => {
-      setShowModal(false);
-      setFormDate('');
-      setFormSlot('first');
-      setFormTeamId('');
-      setFormHostIds([]);
-      setFormError(null);
-    }, 220);
+    setTimeout(() => { setShowModal(false); }, 220);
   }, []);
 
   useEffect(() => {
@@ -76,68 +83,10 @@ const EmceeDashboard: React.FC = () => {
     return () => document.removeEventListener('keydown', handler);
   }, [showModal, closeModal]);
 
-  const openCoinModal = useCallback((session: Session) => {
-    const initial: Record<number, string> = {};
-    session.host_ids.forEach((id) => { initial[id] = '0'; });
-    setCoinSession(session);
-    setCoinValues(initial);
-    setCoinError(null);
-    setShowCoinModal(true);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setIsCoinModalVisible(true));
-    });
-  }, []);
-
-  const closeCoinModal = useCallback(() => {
-    setIsCoinModalVisible(false);
-    setTimeout(() => {
-      setShowCoinModal(false);
-      setCoinSession(null);
-      setCoinValues({});
-      setCoinError(null);
-    }, 220);
-  }, []);
-
-  useEffect(() => {
-    if (!showCoinModal) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCoinModal(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [showCoinModal, closeCoinModal]);
-
-  const handleCoinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token || !coinSession) return;
-
-    setIsCoinSubmitting(true);
-    setCoinError(null);
-
-    try {
-      const entries = Object.entries(coinValues).map(([uid, coins]) => ({
-        user_id: Number(uid),
-        coins: Number(coins),
-      }));
-      await coinEntryService.saveCoinEntries(token, coinSession.id, entries);
-      closeCoinModal();
-    } catch (err: any) {
-      setCoinError(err.message);
-      setIsCoinSubmitting(false);
-    }
-  };
-
-  const toggleHost = (id: number) => {
-    setFormHostIds((prev) =>
-      prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id]
-    );
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !formTeamId) return;
-
-    setIsSubmitting(true);
-    setFormError(null);
-
+    setIsSubmitting(true); setFormError(null);
     try {
       const created = await sessionService.createSession(token, {
         date: formDate,
@@ -153,89 +102,262 @@ const EmceeDashboard: React.FC = () => {
     }
   };
 
-  return (
-    <DashboardLayout title="Dashboard">
-      {/* Assigned Teams */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-bold text-slate-900">Your Assigned Teams</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Teams you are responsible for.</p>
+  const toggleHost = (id: number) => {
+    setFormHostIds((prev) => prev.includes(id) ? prev.filter((h) => h !== id) : [...prev, id]);
+  };
+
+  // --- Coin modal ---
+  const openCoinModal = useCallback((session: Session) => {
+    const initial: Record<number, string> = {};
+    session.host_ids.forEach((id) => { initial[id] = '0'; });
+    setCoinSession(session); setCoinValues(initial); setCoinError(null);
+    setShowCoinModal(true);
+    requestAnimationFrame(() => { requestAnimationFrame(() => setIsCoinModalVisible(true)); });
+  }, []);
+
+  const closeCoinModal = useCallback(() => {
+    setIsCoinModalVisible(false);
+    setTimeout(() => { setShowCoinModal(false); setCoinSession(null); setCoinValues({}); setCoinError(null); }, 220);
+  }, []);
+
+  useEffect(() => {
+    if (!showCoinModal) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeCoinModal(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showCoinModal, closeCoinModal]);
+
+  const handleCoinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !coinSession) return;
+    setIsCoinSubmitting(true); setCoinError(null);
+    try {
+      const entries = Object.entries(coinValues).map(([uid, coins]) => ({
+        user_id: Number(uid),
+        coins: Number(coins),
+      }));
+      await coinEntryService.saveCoinEntries(token, coinSession.id, entries);
+      const total = entries.reduce((sum, e) => sum + e.coins, 0);
+      setSessions((prev) =>
+        prev.map((s) => s.id === coinSession.id ? { ...s, coin_total: total } : s)
+      );
+      closeCoinModal();
+    } catch (err: any) {
+      setCoinError(err.message);
+      setIsCoinSubmitting(false);
+    }
+  };
+
+  // --- Derived stats ---
+  const activeTeams = teams.filter((t) => t.active);
+  const now = new Date();
+  const thisMonthSessions = sessions.filter((s) => {
+    const d = new Date(s.date + 'T00:00:00');
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      s.created_by_id === currentUser?.id
+    );
+  });
+  const totalCoinsThisMonth = teamTotals.reduce((sum, r) => sum + r.total_coins, 0);
+  const totalActiveHosts = activeTeams.reduce((sum, t) => sum + t.host_count, 0);
+
+  const statCards = [
+    { label: 'Assigned Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
+    { label: 'Sessions This Month', value: thisMonthSessions.length, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Coins Logged This Month', value: totalCoinsThisMonth.toLocaleString(), icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Active Hosts', value: totalActiveHosts, icon: UserCheck, color: 'text-violet-600', bg: 'bg-violet-50' },
+  ];
+
+  const recentSessions = [...sessions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  const maxCoins = teamTotals.length > 0 ? teamTotals[0].total_coins || 1 : 1;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 h-24 animate-pulse" />
+          ))}
         </div>
-        <div className="p-6">
-          {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {!isLoading && !error && teams.length === 0 && (
-            <p className="text-sm text-slate-400">You have no teams assigned yet.</p>
-          )}
-          {!isLoading && !error && teams.length > 0 && (
-            <ul className="space-y-3">
-              {teams.map((team) => (
-                <li key={team.id} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700">
-                    <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
-                    {team.name}
-                    <span className="ml-auto text-xs text-slate-400">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
-                  </div>
-                  {team.members.length > 0 ? (
-                    <ul className="border-t border-slate-100 divide-y divide-slate-100">
-                      {team.members.map((member) => (
-                        <li key={member.id} className="flex items-center gap-2 px-4 py-2">
-                          <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold flex items-center justify-center shrink-0 uppercase">
+      </div>
+    );
+  }
+
+  if (error) return <p className="text-sm text-red-500">{error}</p>;
+
+  return (
+    <>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{value}</p>
+                <p className="text-xs text-slate-400 font-medium leading-tight">{label}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-3">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Actions</p>
+        <button
+          onClick={openModal}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+        >
+          + New Session
+        </button>
+      </div>
+
+      {/* Two-column grid: My Teams + Recent Sessions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* My Teams */}
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800">My Teams</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Your currently assigned teams</p>
+          </div>
+          <div className="p-4">
+            {activeTeams.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-slate-400">No teams assigned yet.</p>
+                <p className="text-xs text-slate-300 mt-1">Contact your admin to get assigned to a team.</p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {activeTeams.map((team) => (
+                  <li key={team.id} className="rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700">
+                      <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
+                      {team.name}
+                      <span className="ml-auto text-xs text-slate-400">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
+                    </div>
+                    {team.members.length > 0 ? (
+                      <div className="border-t border-slate-100 px-4 py-2 flex items-center gap-1.5 flex-wrap">
+                        {team.members.map((member) => (
+                          <span
+                            key={member.id}
+                            title={member.name}
+                            className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold flex items-center justify-center shrink-0 uppercase ring-2 ring-white"
+                          >
                             {member.name.charAt(0)}
                           </span>
-                          <span className="text-xs text-slate-600 truncate">{member.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="px-4 py-2 border-t border-slate-100 text-xs text-slate-400">No hosts assigned.</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="px-4 py-2 border-t border-slate-100 text-xs text-slate-400">No hosts assigned.</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Sessions */}
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-slate-800">Recent Sessions</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Last 5 sessions across your teams</p>
+            </div>
+            <button
+              onClick={openModal}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+            >
+              + New
+            </button>
+          </div>
+          <div className="p-4">
+            {recentSessions.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No sessions recorded yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {recentSessions.map((session) => {
+                  const isPending = session.host_ids.length > 0 && session.coin_total === 0;
+                  return (
+                    <li key={session.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{session.team_name}</p>
+                          {isPending ? (
+                            <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700">
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-700">
+                              Logged
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          {new Date(session.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {' · '}
+                          {session.session_slot === 'first' ? 'Slot 1' : 'Slot 2'}
+                          {session.coin_total > 0 && ` · ${session.coin_total.toLocaleString()} coins`}
+                        </p>
+                      </div>
+                      {isPending && (
+                        <button
+                          onClick={() => openCoinModal(session)}
+                          className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
+                        >
+                          Log Coins
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Live Sessions */}
+      {/* Team Leaderboard */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Live Sessions</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Create and review session records for coin entry.</p>
-          </div>
-          <button
-            onClick={openModal}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
-          >
-            + New Session
-          </button>
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-800">Team Leaderboard</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Your teams ranked by total coins this month</p>
         </div>
-
-        <div className="p-6">
-          {!isLoading && sessions.length === 0 && (
-            <p className="text-sm text-slate-400">No sessions recorded yet.</p>
-          )}
-          {sessions.length > 0 && (
-            <ul className="space-y-2">
-              {sessions.map((session) => (
-                <li key={session.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {session.date} — {session.session_slot === 'first' ? '1st' : '2nd'} Session
-                    </p>
-                    <p className="text-xs text-slate-400">{session.team_name} · {session.host_ids.length} host{session.host_ids.length !== 1 ? 's' : ''}</p>
-                  </div>
-                  {session.host_ids.length > 0 && (
-                    <button
-                      onClick={() => openCoinModal(session)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
-                    >
-                      Log Coins
-                    </button>
-                  )}
-                </li>
-              ))}
+        <div className="p-4">
+          {teamTotals.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-4">No session data this month.</p>
+          ) : (
+            <ul className="space-y-4">
+              {teamTotals.map((row, index) => {
+                const pct = Math.round((row.total_coins / maxCoins) * 100);
+                return (
+                  <li key={row.team_id} className="flex items-center gap-4">
+                    <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{row.team_name}</p>
+                          <span className="text-[10px] text-slate-400 shrink-0">{row.host_count} host{row.host_count !== 1 ? 's' : ''}</span>
+                        </div>
+                        <p className="text-xs font-bold text-teal-600 shrink-0 ml-2">{row.total_coins.toLocaleString()}</p>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -246,17 +368,13 @@ const EmceeDashboard: React.FC = () => {
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${isModalVisible ? 'opacity-100' : 'opacity-0'}`}
         >
-          {/* Backdrop */}
           <div
             className={`absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-200 ${isModalVisible ? 'opacity-100' : 'opacity-0'}`}
             onClick={closeModal}
           />
-
-          {/* Modal card */}
           <div
             className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 ${isModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'}`}
           >
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
                 <h2 className="text-sm font-bold text-slate-900">New Session</h2>
@@ -269,13 +387,11 @@ const EmceeDashboard: React.FC = () => {
                 aria-label="Close"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             </div>
 
-            {/* Form body */}
             <form onSubmit={handleSubmit}>
               <div className="px-6 py-5 space-y-4">
                 {formError && (
@@ -321,7 +437,7 @@ const EmceeDashboard: React.FC = () => {
                     className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
                   >
                     <option value="">Select team</option>
-                    {teams.filter((t) => t.active).map((t) => (
+                    {activeTeams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
@@ -354,7 +470,7 @@ const EmceeDashboard: React.FC = () => {
                               onChange={() => toggleHost(host.id)}
                               className="rounded accent-teal-600"
                             />
-                            <span className="text-sm text-slate-700 truncate flex-1">{host.email}</span>
+                            <span className="text-sm text-slate-700 truncate flex-1">{host.name}</span>
                           </label>
                         ))}
                       </div>
@@ -363,7 +479,6 @@ const EmceeDashboard: React.FC = () => {
                 })()}
               </div>
 
-              {/* Footer */}
               <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
                 <button
                   type="button"
@@ -375,7 +490,7 @@ const EmceeDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[100px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-25 text-center"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -392,6 +507,7 @@ const EmceeDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
       {/* Coin Entry Modal */}
       {showCoinModal && coinSession && (
         <div
@@ -459,7 +575,7 @@ const EmceeDashboard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isCoinSubmitting}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[100px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-25 text-center"
                 >
                   {isCoinSubmitting ? (
                     <span className="flex items-center justify-center gap-1.5">
@@ -476,7 +592,7 @@ const EmceeDashboard: React.FC = () => {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 };
 

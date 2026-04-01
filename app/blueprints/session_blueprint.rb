@@ -28,4 +28,8 @@ class SessionBlueprint < Blueprinter::Base
   field :host_names do |session|
     session.hosts.pluck(:name)
   end
+
+  field :coin_total do |session|
+    session.coin_entries.sum(:coins)
+  end
 end
