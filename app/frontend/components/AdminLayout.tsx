@@ -72,6 +72,7 @@ const AdminLayout: React.FC = () => {
             <NavLink
               key={to}
               to={to}
+              end={to === '/admin'}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
                 `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 border-l-2 pl-[10px] ${
