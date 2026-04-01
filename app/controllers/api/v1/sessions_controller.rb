@@ -11,7 +11,7 @@ class Api::V1::SessionsController < ApplicationController
     sessions = if current_user.admin?
       current_company.sessions
     else
-      current_company.sessions.where(team_id: current_user.teams.pluck(:id))
+      current_company.sessions.where(team_id: current_teams.pluck(:id))
     end
     sessions = sessions.order(date: :desc)
 
