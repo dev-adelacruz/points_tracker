@@ -151,7 +151,6 @@ const EmceeDashboard: React.FC = () => {
 
   // --- Derived stats ---
   const activeTeams = teams.filter((t) => t.active);
-  const now = new Date();
   const thisMonthSessions = sessions.filter((s) => {
     const d = new Date(s.date + 'T00:00:00');
     return (
