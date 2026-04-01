@@ -26,7 +26,7 @@ class Api::V1::EmceesController < ApplicationController
       id: emcee.id,
       name: emcee.name,
       email: emcee.email,
-      teams: emcee.teams.map { |t| { id: t.id, name: t.name } }
+      teams: emcee.assigned_teams.map { |t| { id: t.id, name: t.name } }
     }
   end
 end
