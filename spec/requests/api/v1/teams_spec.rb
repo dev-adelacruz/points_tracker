@@ -32,7 +32,7 @@ RSpec.describe "Teams" do
 
         response(200, "returns only assigned teams for emcee") do
           before do
-            create(:team_membership, user: emcee, team: team1)
+            create(:team_emcee_assignment, user: emcee, team: team1)
             team2
             sign_in emcee
           end

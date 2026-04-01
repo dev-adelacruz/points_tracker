@@ -21,4 +21,8 @@ namespace :v1 do
     resource :team_totals, only: [ :show ]
     resource :host_performance, only: [ :show ]
   end
+
+  namespace :emcee do
+    resources :team_host_stats, only: [ :index ]
+  end
 end
