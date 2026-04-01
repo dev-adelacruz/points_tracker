@@ -63,6 +63,11 @@
   to { width: var(--bar-width); }
 }
 
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-circumference); }
+  to   { stroke-dashoffset: var(--ring-offset); }
+}
+
 /* ── Leaderboard & Page Animations ─────────────────────────── */
 
 @keyframes lb-row-in {

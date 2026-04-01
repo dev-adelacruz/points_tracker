@@ -11,6 +11,8 @@ import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
 import { Users, UserCheck, Calendar, Zap } from 'lucide-react';
+import StatCard from '../../components/StatCard';
+import ProgressRing from '../../components/ProgressRing';
 
 const EmceeDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -163,10 +165,10 @@ const EmceeDashboard: React.FC = () => {
   const totalActiveHosts = activeTeams.reduce((sum, t) => sum + t.host_count, 0);
 
   const statCards = [
-    { label: 'Assigned Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
-    { label: 'Sessions This Month', value: thisMonthSessions.length, icon: Calendar, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Coins Logged This Month', value: totalCoinsThisMonth.toLocaleString(), icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Active Hosts', value: totalActiveHosts, icon: UserCheck, color: 'text-violet-600', bg: 'bg-violet-50' },
+    { label: 'Assigned Teams', value: activeTeams.length, icon: Users, accent: 'teal' as const },
+    { label: 'Sessions This Month', value: thisMonthSessions.length, icon: Calendar, accent: 'blue' as const },
+    { label: 'Coins Logged This Month', value: totalCoinsThisMonth.toLocaleString(), icon: Zap, accent: 'amber' as const },
+    { label: 'Active Hosts', value: totalActiveHosts, icon: UserCheck, accent: 'violet' as const },
   ];
 
   const recentSessions = [...sessions]
@@ -193,18 +195,8 @@ const EmceeDashboard: React.FC = () => {
     <>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                <Icon className={`w-4 h-4 ${color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{value}</p>
-                <p className="text-xs text-slate-400 font-medium leading-tight">{label}</p>
-              </div>
-            </div>
-          </div>
+        {statCards.map(({ label, value, icon, accent }) => (
+          <StatCard key={label} label={label} value={value} icon={icon} accent={accent} />
         ))}
       </div>
 
@@ -334,30 +326,26 @@ const EmceeDashboard: React.FC = () => {
           {teamTotals.length === 0 ? (
             <p className="text-sm text-slate-400 text-center py-4">No session data this month.</p>
           ) : (
-            <ul className="space-y-4">
-              {teamTotals.map((row, index) => {
-                const pct = Math.round((row.total_coins / maxCoins) * 100);
-                return (
-                  <li key={row.team_id} className="flex items-center gap-4">
-                    <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-xs font-semibold text-slate-800 truncate">{row.team_name}</p>
-                          <span className="text-[10px] text-slate-400 shrink-0">{row.host_count} host{row.host_count !== 1 ? 's' : ''}</span>
-                        </div>
-                        <p className="text-xs font-bold text-teal-600 shrink-0 ml-2">{row.total_coins.toLocaleString()}</p>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-teal-500 transition-all duration-500"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
+            <ul className="space-y-3">
+              {teamTotals.map((row, index) => (
+                <li key={row.team_id} className="flex items-center gap-4">
+                  <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{row.team_name}</p>
+                      <span className="text-[10px] text-slate-400 shrink-0">{row.host_count} host{row.host_count !== 1 ? 's' : ''}</span>
                     </div>
-                  </li>
-                );
-              })}
+                    <p className="text-xs font-bold text-teal-600 mt-0.5">{row.total_coins.toLocaleString()} coins</p>
+                  </div>
+                  <ProgressRing
+                    value={row.total_coins}
+                    max={maxCoins}
+                    size={48}
+                    strokeWidth={4}
+                    label={row.team_name}
+                  />
+                </li>
+              ))}
             </ul>
           )}
         </div>
