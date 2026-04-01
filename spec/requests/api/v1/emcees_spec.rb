@@ -20,7 +20,7 @@ RSpec.describe "Emcees" do
           before do
             emcee1
             emcee2
-            create(:team_membership, user: emcee1, team: team)
+            create(:team_emcee_assignment, user: emcee1, team: team)
             sign_in admin
           end
 
