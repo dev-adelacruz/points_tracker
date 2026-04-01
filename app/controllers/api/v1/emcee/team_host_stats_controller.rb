@@ -50,7 +50,8 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
   end
 
   def set_team
-    @team = current_user.teams.where(company_id: current_company.id).find_by(id: params[:team_id])
+    teams_scope = current_user.admin? ? current_company.teams : current_user.assigned_teams
+    @team = teams_scope.where(company_id: current_company.id).find_by(id: params[:team_id])
 
     unless @team
       render json: { status: 403, message: "Forbidden" }, status: :forbidden
