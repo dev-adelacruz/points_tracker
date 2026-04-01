@@ -62,6 +62,21 @@ RSpec.describe "Sessions" do
           end
         end
 
+        response(200, "returns sessions from other teams created by the emcee") do
+          let(:other_team) { create(:team) }
+
+          before do
+            create(:session, team: other_team, created_by: emcee, date: Date.current)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data].length).to eq(1)
+            expect(json_response[:data].first[:team_id]).to eq(other_team.id)
+          end
+        end
+
         response(403, "returns forbidden for host") do
           before { sign_in host1 }
 

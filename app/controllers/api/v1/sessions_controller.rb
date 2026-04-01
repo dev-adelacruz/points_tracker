@@ -12,6 +12,7 @@ class Api::V1::SessionsController < ApplicationController
       current_company.sessions
     else
       current_company.sessions.where(team_id: current_teams.pluck(:id))
+        .or(current_company.sessions.where(created_by: current_user))
     end
     sessions = sessions.order(date: :desc)
 
