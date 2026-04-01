@@ -41,20 +41,19 @@ const EmceeDashboard: React.FC = () => {
   const [coinError, setCoinError] = useState<string | null>(null);
   const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const startOfMonth = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
   useEffect(() => {
     if (!token) return;
-
-    const now = new Date();
-    const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const todayStr = now.toISOString().split('T')[0];
 
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token, { active: true }),
       sessionService.getSessions(token),
-      reportService.getTeamTotals(token, startOfMonth, todayStr),
+      reportService.getTeamTotals(token, startOfMonth, today),
     ])
       .then(([t, h, s, totals]) => {
         setTeams(t);
@@ -143,6 +142,8 @@ const EmceeDashboard: React.FC = () => {
       setSessions((prev) =>
         prev.map((s) => s.id === coinSession.id ? { ...s, coin_total: total } : s)
       );
+      const updatedTotals = await reportService.getTeamTotals(token, startOfMonth, today).catch(() => null);
+      if (updatedTotals) setTeamTotals(updatedTotals);
       closeCoinModal();
     } catch (err: any) {
       setCoinError(err.message);
@@ -152,7 +153,6 @@ const EmceeDashboard: React.FC = () => {
 
   // --- Derived stats ---
   const activeTeams = teams.filter((t) => t.active);
-  const now = new Date();
   const thisMonthSessions = sessions.filter((s) => {
     const d = new Date(s.date + 'T00:00:00');
     return (
