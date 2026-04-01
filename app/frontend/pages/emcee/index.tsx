@@ -41,20 +41,18 @@ const EmceeDashboard: React.FC = () => {
   const [coinError, setCoinError] = useState<string | null>(null);
   const [isCoinSubmitting, setIsCoinSubmitting] = useState(false);
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const today = now.toISOString().split('T')[0];
 
   useEffect(() => {
     if (!token) return;
-
-    const now = new Date();
-    const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const todayStr = now.toISOString().split('T')[0];
 
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token, { active: true }),
       sessionService.getSessions(token),
-      reportService.getTeamTotals(token, startOfMonth, todayStr),
+      reportService.getTeamTotals(token, startOfMonth, today),
     ])
       .then(([t, h, s, totals]) => {
         setTeams(t);
@@ -143,6 +141,7 @@ const EmceeDashboard: React.FC = () => {
       setSessions((prev) =>
         prev.map((s) => s.id === coinSession.id ? { ...s, coin_total: total } : s)
       );
+      reportService.getTeamTotals(token, startOfMonth, today).then(setTeamTotals).catch(() => {});
       closeCoinModal();
     } catch (err: any) {
       setCoinError(err.message);

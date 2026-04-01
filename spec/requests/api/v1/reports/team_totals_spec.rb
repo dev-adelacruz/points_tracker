@@ -41,6 +41,26 @@ RSpec.describe "Team Totals Report" do
           end
         end
 
+        response(200, "includes coin entries logged by an emcee for their assigned team") do
+          let(:start_date) { "2026-01-01" }
+          let(:end_date)   { "2026-01-31" }
+
+          before do
+            create(:team_emcee_assignment, team: team, user: emcee)
+            create(:team_membership, team: team, user: host)
+            session = create(:session, date: "2026-01-15", team: team)
+            session.session_hosts.create!(user: host)
+            create(:coin_entry, user: host, session: session, coins: 150)
+            sign_in emcee
+          end
+
+          run_test! do
+            expect(response).to have_http_status(:ok)
+            row = json_response[:data].find { |r| r[:team_id] == team.id }
+            expect(row[:total_coins]).to eq(150)
+          end
+        end
+
         response(200, "emcee sees only their assigned teams") do
           let(:start_date) { "2026-01-01" }
           let(:end_date)   { "2026-01-31" }
