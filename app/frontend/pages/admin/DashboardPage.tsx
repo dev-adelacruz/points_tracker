@@ -10,6 +10,7 @@ import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
+import type { PeriodComparisonRow } from '../../interfaces/periodComparison';
 import TrendBadge from '../../components/TrendBadge';
 import type { DateRange } from '../../interfaces/dateRange';
 import { buildDateRange } from '../../components/PeriodSelector';
@@ -80,6 +81,7 @@ const DashboardPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
   const [prevTeamTotals, setPrevTeamTotals] = useState<TeamTotalsRow[]>([]);
+  const [hostComparison, setHostComparison] = useState<PeriodComparisonRow[]>([]);
 
   // Period selector — default: This Month
   const [dateRange, setDateRange] = useState<DateRange>(() => buildDateRange('this_month'));
@@ -168,6 +170,8 @@ const DashboardPage: React.FC = () => {
         setSessions(s.sessions);
         setTeamTotals(totals);
         setPrevTeamTotals(prevTotals);
+
+        setHostComparison(comparison);
 
         const coinsA = comparison.reduce((sum: number, row: any) => sum + row.period_a_total, 0);
         const coinsB = comparison.reduce((sum: number, row: any) => sum + row.period_b_total, 0);
@@ -293,6 +297,9 @@ const DashboardPage: React.FC = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
   const topTeams = teamTotals.slice(0, 5);
+  const topHosts = [...hostComparison]
+    .sort((a, b) => b.period_a_total - a.period_a_total)
+    .slice(0, 5);
   const label = periodLabel(dateRange);
 
   const hostsForSelectedTeam = sessionTeamId
@@ -412,8 +419,8 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Top Teams + Recent Sessions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Top Teams + Top Hosts + Recent Sessions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800">Top Teams</h2>
@@ -457,6 +464,45 @@ const DashboardPage: React.FC = () => {
                         <p className="text-[10px] text-slate-400 mt-1">
                           avg {row.avg_coins_per_host.toLocaleString()} coins/host · {row.host_count} host{row.host_count !== 1 ? 's' : ''}
                         </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800">Top Hosts</h2>
+            <p className="text-xs text-slate-400 mt-0.5">By total coins this month</p>
+          </div>
+          <div className="p-4">
+            {topHosts.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No host data this month.</p>
+            ) : (
+              <ul className="space-y-3">
+                {topHosts.map((row, index) => {
+                  const maxCoins = topHosts[0].period_a_total || 1;
+                  const pct = Math.round((row.period_a_total / maxCoins) * 100);
+                  return (
+                    <li key={row.entity_id} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{row.entity_name}</p>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <TrendBadge deltaPct={row.delta_pct} />
+                            <p className="text-xs font-bold text-blue-600">{row.period_a_total.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
                       </div>
                     </li>
                   );
