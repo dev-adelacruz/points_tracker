@@ -16,6 +16,7 @@ import type { DateRange } from '../../interfaces/dateRange';
 import { buildDateRange } from '../../components/PeriodSelector';
 import PeriodSelector from '../../components/PeriodSelector';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
+import CoinsOverTimeChart from '../../components/CoinsOverTimeChart';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle, Coins } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -370,6 +371,21 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
         <PeriodSelector value={dateRange} onChange={setDateRange} />
+      </div>
+
+      {/* Coins Over Time */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-800">Coins Over Time</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Daily coin totals · {label}</p>
+        </div>
+        <div className="px-6 py-4">
+          <CoinsOverTimeChart
+            sessions={sessions}
+            month={new Date(dateRange.startDate + 'T00:00:00').getMonth() + 1}
+            year={new Date(dateRange.startDate + 'T00:00:00').getFullYear()}
+          />
+        </div>
       </div>
 
       {/* Quick Actions */}
