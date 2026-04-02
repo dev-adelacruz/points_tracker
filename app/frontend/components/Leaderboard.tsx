@@ -63,7 +63,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   : 'bg-slate-50 border-slate-100 text-slate-700 hover:bg-teal-50 hover:border-teal-100',
               ].join(' ')}
               style={{ '--lb-delay': `${delay}ms` } as React.CSSProperties}
-              aria-label={`Rank ${rank}: ${host.email}${isMe ? ' (you)' : ''}`}
+              aria-label={`Rank ${rank}: ${host.name}${isMe ? ' (you)' : ''}`}
             >
               {/* Rank badge */}
               {isTop3 ? (
@@ -78,8 +78,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 </span>
               )}
 
-              {/* Email */}
-              <span className="flex-1 truncate">{host.email}</span>
+              {/* Name */}
+              <span className="flex-1 truncate">{host.name}</span>
 
               {/* "You" tag */}
               {isMe && (
