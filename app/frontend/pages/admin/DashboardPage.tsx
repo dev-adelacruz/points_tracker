@@ -10,11 +10,25 @@ import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
+import TrendBadge from '../../components/TrendBadge';
 import type { DateRange } from '../../interfaces/dateRange';
 import { buildDateRange } from '../../components/PeriodSelector';
 import PeriodSelector from '../../components/PeriodSelector';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
-import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
+import { Users, UserCheck, Mic, Calendar, AlertTriangle, Coins } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Previous period helper
+// ---------------------------------------------------------------------------
+const getPreviousPeriod = (startDate: string, endDate: string) => {
+  const start = new Date(startDate + 'T00:00:00');
+  const end = new Date(endDate + 'T00:00:00');
+  const durationMs = end.getTime() - start.getTime();
+  const prevEnd = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+  const prevStart = new Date(prevEnd.getTime() - durationMs);
+  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  return { prevStart: fmt(prevStart), prevEnd: fmt(prevEnd) };
+};
 
 // ---------------------------------------------------------------------------
 // Period label helper
@@ -47,6 +61,7 @@ const formatDate = (): string =>
     day: 'numeric',
     year: 'numeric',
   });
+
 // ---------------------------------------------------------------------------
 // DashboardPage
 // ---------------------------------------------------------------------------
@@ -68,6 +83,10 @@ const DashboardPage: React.FC = () => {
   // Period selector — default: This Month
   const [dateRange, setDateRange] = useState<DateRange>(() => buildDateRange('this_month'));
 
+  // Trend state
+  const [totalCoins, setTotalCoins] = useState(0);
+  const [coinDeltaPct, setCoinDeltaPct] = useState<number | null>(null);
+  const [sessionDeltaPct, setSessionDeltaPct] = useState<number | null>(null);
 
   // New Team modal
   const [showTeamModal, setShowTeamModal] = useState(false);
@@ -126,16 +145,37 @@ const DashboardPage: React.FC = () => {
     if (!token) return;
     setAnalyticsLoading(true);
 
+    const { prevStart, prevEnd } = getPreviousPeriod(dateRange.startDate, dateRange.endDate);
+
     Promise.all([
       sessionService.getSessions(token, {
         date_from: dateRange.startDate,
         date_to: dateRange.endDate,
       }),
       reportService.getTeamTotals(token, dateRange.startDate, dateRange.endDate),
+      reportService.getPeriodComparison(token, {
+        period_a_start: dateRange.startDate,
+        period_a_end: dateRange.endDate,
+        period_b_start: prevStart,
+        period_b_end: prevEnd,
+        scope: 'all_hosts',
+      }),
+      sessionService.getSessions(token, { date_from: prevStart, date_to: prevEnd }),
     ])
-      .then(([s, totals]) => {
+      .then(([s, totals, comparison, prevSessions]) => {
         setSessions(s.sessions);
         setTeamTotals(totals);
+
+        const coinsA = comparison.reduce((sum: number, row: any) => sum + row.period_a_total, 0);
+        const coinsB = comparison.reduce((sum: number, row: any) => sum + row.period_b_total, 0);
+        setTotalCoins(coinsA);
+        const coinDelta = coinsB > 0 ? ((coinsA - coinsB) / coinsB) * 100 : coinsA > 0 ? 100 : 0;
+        setCoinDeltaPct(coinDelta);
+
+        const sessionsA = s.sessions.length;
+        const sessionsB = prevSessions.sessions.length;
+        const sessDelta = sessionsB > 0 ? ((sessionsA - sessionsB) / sessionsB) * 100 : sessionsA > 0 ? 100 : 0;
+        setSessionDeltaPct(sessDelta);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setAnalyticsLoading(false));
@@ -257,17 +297,18 @@ const DashboardPage: React.FC = () => {
     : [];
 
   const statCards = [
-    { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
-    { label: 'Active Hosts', value: activeHostCount, icon: UserCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Emcees', value: emceeCount, icon: Mic, color: 'text-violet-600', bg: 'bg-violet-50' },
-    { label: `Sessions · ${label}`, value: sessions.length, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50', trend: null },
+    { label: 'Active Hosts', value: activeHostCount, icon: UserCheck, color: 'text-blue-600', bg: 'bg-blue-50', trend: null },
+    { label: 'Active Emcees', value: emceeCount, icon: Mic, color: 'text-violet-600', bg: 'bg-violet-50', trend: null },
+    { label: `Sessions · ${label}`, value: sessions.length, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', trend: sessionDeltaPct },
+    { label: `Total Coins · ${label}`, value: totalCoins.toLocaleString(), icon: Coins, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: coinDeltaPct },
   ];
 
   if (loading) {
     return (
       <div className="space-y-5">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5 h-24 animate-pulse" />
           ))}
         </div>
@@ -286,16 +327,21 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label: cardLabel, value, icon: Icon, color, bg }) => (
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {statCards.map(({ label: cardLabel, value, icon: Icon, color, bg, trend }) => (
           <div key={cardLabel} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
+            <div className="flex items-start gap-3">
+              <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0 mt-0.5`}>
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-2xl font-bold text-slate-900">{value}</p>
                 <p className="text-xs text-slate-400 font-medium leading-tight">{cardLabel}</p>
+                {trend !== null && (
+                  <div className="mt-1.5">
+                    <TrendBadge deltaPct={trend} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
