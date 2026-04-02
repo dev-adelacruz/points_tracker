@@ -10,6 +10,7 @@ import type { Team } from '../../interfaces/team';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
+import SessionCoverageDonut from '../../components/SessionCoverageDonut';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
 
 const DashboardPage: React.FC = () => {
@@ -155,6 +156,17 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Session Coverage */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="text-sm font-bold text-slate-800">Session Coverage</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Coin logging status this month</p>
+        </div>
+        <div className="px-6 py-4">
+          <SessionCoverageDonut sessions={thisMonthSessions} />
+        </div>
       </div>
 
       {/* Quick Actions */}
