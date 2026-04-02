@@ -62,4 +62,83 @@ RSpec.describe "Emcees" do
       end
     end
   end
+
+  describe "#create" do
+    path "/api/v1/emcees" do
+      post "creates a new emcee (admin only)" do
+        tags "Emcees"
+        consumes "application/json"
+        produces "application/json"
+
+        parameter name: :body, in: :body, schema: {
+          type: :object,
+          properties: {
+            emcee: {
+              type: :object,
+              properties: {
+                name: { type: :string },
+                email: { type: :string },
+                password: { type: :string }
+              },
+              required: %w[name email password]
+            }
+          }
+        }
+
+        response(201, "creates emcee successfully") do
+          let(:body) { { emcee: { name: "Jane Doe", email: "jane@example.com", password: "secret123" } } }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :created
+            expect(json_response[:data][:name]).to eq("Jane Doe")
+            expect(json_response[:data][:email]).to eq("jane@example.com")
+            expect(json_response[:data][:teams]).to be_empty
+          end
+        end
+
+        response(422, "returns error for duplicate email") do
+          let(:body) { { emcee: { name: "Dup", email: emcee1.email, password: "secret123" } } }
+
+          before do
+            emcee1
+            sign_in admin
+          end
+
+          run_test! do
+            expect(response).to have_http_status :unprocessable_entity
+          end
+        end
+
+        response(422, "returns error for missing required fields") do
+          let(:body) { { emcee: { name: "", email: "", password: "" } } }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :unprocessable_entity
+          end
+        end
+
+        response(403, "returns forbidden for non-admin") do
+          let(:body) { { emcee: { name: "X", email: "x@x.com", password: "pass123" } } }
+
+          before { sign_in emcee1 }
+
+          run_test! do
+            expect(response).to have_http_status :forbidden
+          end
+        end
+
+        response(401, "returns unauthorized when not signed in") do
+          let(:body) { { emcee: { name: "X", email: "x@x.com", password: "pass123" } } }
+
+          run_test! do
+            expect(response).to have_http_status :unauthorized
+          end
+        end
+      end
+    end
+  end
 end
