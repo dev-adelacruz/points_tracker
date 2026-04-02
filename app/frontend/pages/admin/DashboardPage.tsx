@@ -9,13 +9,34 @@ import { reportService } from '../../services/reportService';
 import type { Team } from '../../interfaces/team';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
+import type { DateRange } from '../../interfaces/dateRange';
+import { buildDateRange } from '../../components/PeriodSelector';
+import PeriodSelector from '../../components/PeriodSelector';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
 
+// ---------------------------------------------------------------------------
+// Period label helper
+// ---------------------------------------------------------------------------
+const periodLabel = (range: DateRange): string => {
+  switch (range.preset) {
+    case 'today': return 'Today';
+    case 'this_week': return 'This Week';
+    case 'this_month': return 'This Month';
+    case 'last_month': return 'Last Month';
+    case 'custom': return `${range.startDate} – ${range.endDate}`;
+    default: return 'This Month';
+  }
+};
+
+// ---------------------------------------------------------------------------
+// DashboardPage
+// ---------------------------------------------------------------------------
 const DashboardPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
 
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [teams, setTeams] = useState<Team[]>([]);
@@ -24,12 +45,17 @@ const DashboardPage: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
 
+  // Period selector — default: This Month
+  const [dateRange, setDateRange] = useState<DateRange>(() => buildDateRange('this_month'));
+
+  // New Team modal
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [teamDesc, setTeamDesc] = useState('');
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const [teamSubmitting, setTeamSubmitting] = useState(false);
 
+  // New Host modal
   const [showHostModal, setShowHostModal] = useState(false);
   const [hostName, setHostName] = useState('');
   const [hostEmail, setHostEmail] = useState('');
@@ -38,30 +64,43 @@ const DashboardPage: React.FC = () => {
   const [hostFormError, setHostFormError] = useState<string | null>(null);
   const [hostSubmitting, setHostSubmitting] = useState(false);
 
+  // Initial load — fetch static data (teams, hosts, emcees) once
   useEffect(() => {
     if (!token) return;
-
-    const now = new Date();
-    const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const todayStr = now.toISOString().split('T')[0];
 
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token),
       emceeService.getEmcees(token),
-      sessionService.getSessions(token),
-      reportService.getTeamTotals(token, startOfMonth, todayStr),
     ])
-      .then(([t, h, e, s, totals]) => {
+      .then(([t, h, e]) => {
         setTeams(t);
         setActiveHostCount(h.filter((host) => host.active).length);
         setEmceeCount(e.length);
-        setSessions(s);
-        setTeamTotals(totals);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [token]);
+
+  // Period-driven fetch — re-runs whenever dateRange changes
+  useEffect(() => {
+    if (!token) return;
+    setAnalyticsLoading(true);
+
+    Promise.all([
+      sessionService.getSessions(token, {
+        date_from: dateRange.startDate,
+        date_to: dateRange.endDate,
+      }),
+      reportService.getTeamTotals(token, dateRange.startDate, dateRange.endDate),
+    ])
+      .then(([s, totals]) => {
+        setSessions(s.sessions);
+        setTeamTotals(totals);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setAnalyticsLoading(false));
+  }, [token, dateRange]);
 
   const closeTeamModal = useCallback(() => setShowTeamModal(false), []);
   const closeHostModal = useCallback(() => setShowHostModal(false), []);
@@ -104,24 +143,20 @@ const DashboardPage: React.FC = () => {
     finally { setHostSubmitting(false); }
   };
 
+  // Derived data
   const activeTeams = teams.filter((t) => t.active);
   const teamsWithoutEmcee = activeTeams.filter((t) => t.emcee_id === null);
-
-  const now = new Date();
-  const thisMonthSessions = sessions.filter((s) => {
-    const d = new Date(s.date);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
   const recentSessions = [...sessions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
   const topTeams = teamTotals.slice(0, 5);
+  const label = periodLabel(dateRange);
 
   const statCards = [
     { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
     { label: 'Active Hosts', value: activeHostCount, icon: UserCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Active Emcees', value: emceeCount, icon: Mic, color: 'text-violet-600', bg: 'bg-violet-50' },
-    { label: 'Sessions This Month', value: thisMonthSessions.length, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: `Sessions · ${label}`, value: sessions.length, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
 
   if (loading) {
@@ -142,19 +177,33 @@ const DashboardPage: React.FC = () => {
     <>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
+        {statCards.map(({ label: cardLabel, value, icon: Icon, color, bg }) => (
+          <div key={cardLabel} className="rounded-2xl bg-white border border-slate-100 shadow-sm p-5">
             <div className="flex items-center gap-3">
               <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{value}</p>
-                <p className="text-xs text-slate-400 font-medium leading-tight">{label}</p>
+                <p className="text-xs text-slate-400 font-medium leading-tight">{cardLabel}</p>
               </div>
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Period Selector */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-4">
+        <div className="flex items-center gap-3 mb-3">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Period</p>
+          {analyticsLoading && (
+            <svg className="w-3.5 h-3.5 animate-spin text-teal-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+          )}
+        </div>
+        <PeriodSelector value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* Quick Actions */}
@@ -197,11 +246,17 @@ const DashboardPage: React.FC = () => {
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800">Top Teams</h2>
-            <p className="text-xs text-slate-400 mt-0.5">By total coins this month</p>
+            <p className="text-xs text-slate-400 mt-0.5">By total coins · {label}</p>
           </div>
           <div className="p-4">
-            {topTeams.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No session data this month.</p>
+            {analyticsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-8 rounded-lg bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : topTeams.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No session data for this period.</p>
             ) : (
               <ul className="space-y-3">
                 {topTeams.map((row, index) => {
@@ -233,11 +288,17 @@ const DashboardPage: React.FC = () => {
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800">Recent Sessions</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Latest across all teams</p>
+            <p className="text-xs text-slate-400 mt-0.5">Latest · {label}</p>
           </div>
           <div className="p-4">
-            {recentSessions.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No sessions yet.</p>
+            {analyticsLoading ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 rounded-xl bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : recentSessions.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No sessions in this period.</p>
             ) : (
               <ul className="space-y-2">
                 {recentSessions.map((s) => (
