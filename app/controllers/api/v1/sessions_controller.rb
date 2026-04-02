@@ -14,11 +14,33 @@ class Api::V1::SessionsController < ApplicationController
       current_company.sessions.where(team_id: current_teams.pluck(:id))
         .or(current_company.sessions.where(created_by: current_user))
     end
+
+    sessions = sessions.where(team_id: params[:team_id]) if params[:team_id].present?
+    sessions = sessions.where(date: params[:date_from]..) if params[:date_from].present?
+    sessions = sessions.where(date: ..params[:date_to]) if params[:date_to].present?
+
+    if params[:session_slot].present?
+      mapped_slot = params[:session_slot] == "first" ? "slot_one" : "slot_two"
+      sessions = sessions.where(session_slot: mapped_slot)
+    end
+
     sessions = sessions.order(date: :desc)
+
+    page     = [ params.fetch(:page, 1).to_i, 1 ].max
+    per_page = [ [ params.fetch(:per_page, 15).to_i, 1 ].max, 100 ].min
+    total    = sessions.count
+
+    sessions = sessions.offset((page - 1) * per_page).limit(per_page)
 
     render json: {
       status: { code: 200, message: "Sessions retrieved successfully." },
-      data: SessionBlueprint.render_as_hash(sessions)
+      data: SessionBlueprint.render_as_hash(sessions),
+      meta: {
+        page: page,
+        per_page: per_page,
+        total_count: total,
+        total_pages: (total.to_f / per_page).ceil
+      }
     }, status: :ok
   end
 

@@ -29,6 +29,7 @@ RSpec.describe "Sessions" do
           run_test! do
             expect(response).to have_http_status :ok
             expect(json_response[:data].length).to eq(1)
+            expect(json_response[:meta]).to include(page: 1, per_page: 15, total_count: 1, total_pages: 1)
           end
         end
 
@@ -239,6 +240,61 @@ RSpec.describe "Sessions" do
           end
         end
       end
+    end
+  end
+
+  describe "#index pagination and filtering" do
+    before { sign_in admin }
+
+    it "returns meta with pagination info" do
+      create(:session, team: team, created_by: emcee, date: Date.current)
+      get "/api/v1/sessions"
+      expect(json_response[:meta]).to include(page: 1, per_page: 15, total_count: 1, total_pages: 1)
+    end
+
+    it "paginates results with page/per_page params" do
+      16.times { |i| create(:session, team: team, created_by: emcee, date: Date.current - i.days) }
+      get "/api/v1/sessions?page=1&per_page=15"
+      expect(json_response[:data].length).to eq(15)
+      expect(json_response[:meta]).to include(page: 1, per_page: 15, total_count: 16, total_pages: 2)
+    end
+
+    it "returns the second page" do
+      16.times { |i| create(:session, team: team, created_by: emcee, date: Date.current - i.days) }
+      get "/api/v1/sessions?page=2&per_page=15"
+      expect(json_response[:data].length).to eq(1)
+      expect(json_response[:meta]).to include(page: 2, total_count: 16)
+    end
+
+    it "filters by team_id" do
+      other_team = create(:team)
+      create(:session, team: team, created_by: emcee, date: Date.current)
+      create(:session, team: other_team, created_by: emcee, date: Date.current - 1.day)
+      get "/api/v1/sessions?team_id=#{team.id}"
+      expect(json_response[:data].length).to eq(1)
+      expect(json_response[:data].first[:team_id]).to eq(team.id)
+    end
+
+    it "filters by session_slot" do
+      create(:session, team: team, created_by: emcee, date: Date.current, session_slot: :slot_one)
+      create(:session, team: team, created_by: emcee, date: Date.current - 1.day, session_slot: :slot_two)
+      get "/api/v1/sessions?session_slot=first"
+      expect(json_response[:data].length).to eq(1)
+      expect(json_response[:data].first[:session_slot]).to eq("first")
+    end
+
+    it "filters by date_from" do
+      create(:session, team: team, created_by: emcee, date: Date.current)
+      create(:session, team: team, created_by: emcee, date: Date.current - 5.days)
+      get "/api/v1/sessions?date_from=#{(Date.current - 1.day)}"
+      expect(json_response[:data].length).to eq(1)
+    end
+
+    it "filters by date_to" do
+      create(:session, team: team, created_by: emcee, date: Date.current)
+      create(:session, team: team, created_by: emcee, date: Date.current - 5.days)
+      get "/api/v1/sessions?date_to=#{(Date.current - 2.days)}"
+      expect(json_response[:data].length).to eq(1)
     end
   end
 end
