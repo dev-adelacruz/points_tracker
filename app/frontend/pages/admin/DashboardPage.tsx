@@ -9,7 +9,9 @@ import { reportService } from '../../services/reportService';
 import type { Team } from '../../interfaces/team';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
+import type { PeriodComparisonRow } from '../../interfaces/periodComparison';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
+import TrendBadge from '../../components/TrendBadge';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
 
 const DashboardPage: React.FC = () => {
@@ -23,6 +25,7 @@ const DashboardPage: React.FC = () => {
   const [emceeCount, setEmceeCount] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
+  const [hostComparison, setHostComparison] = useState<PeriodComparisonRow[]>([]);
 
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -45,19 +48,32 @@ const DashboardPage: React.FC = () => {
     const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const todayStr = now.toISOString().split('T')[0];
 
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthEnd = new Date(monthStart.getTime() - 24 * 60 * 60 * 1000);
+    const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1);
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token),
       emceeService.getEmcees(token),
       sessionService.getSessions(token),
       reportService.getTeamTotals(token, startOfMonth, todayStr),
+      reportService.getPeriodComparison(token, {
+        period_a_start: startOfMonth,
+        period_a_end: todayStr,
+        period_b_start: fmt(prevMonthStart),
+        period_b_end: fmt(prevMonthEnd),
+        scope: 'all_hosts',
+      }),
     ])
-      .then(([t, h, e, s, totals]) => {
+      .then(([t, h, e, s, totals, hostComp]) => {
         setTeams(t);
         setActiveHostCount(h.filter((host) => host.active).length);
         setEmceeCount(e.length);
         setSessions(s);
         setTeamTotals(totals);
+        setHostComparison(hostComp);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
@@ -116,6 +132,9 @@ const DashboardPage: React.FC = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
   const topTeams = teamTotals.slice(0, 5);
+  const topHosts = [...hostComparison]
+    .sort((a, b) => b.period_a_total - a.period_a_total)
+    .slice(0, 5);
 
   const statCards = [
     { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
@@ -192,8 +211,8 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Top Teams + Recent Sessions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Top Teams + Top Hosts + Recent Sessions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-sm font-bold text-slate-800">Top Teams</h2>
@@ -218,6 +237,45 @@ const DashboardPage: React.FC = () => {
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
                             className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800">Top Hosts</h2>
+            <p className="text-xs text-slate-400 mt-0.5">By total coins this month</p>
+          </div>
+          <div className="p-4">
+            {topHosts.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">No host data this month.</p>
+            ) : (
+              <ul className="space-y-3">
+                {topHosts.map((row, index) => {
+                  const maxCoins = topHosts[0].period_a_total || 1;
+                  const pct = Math.round((row.period_a_total / maxCoins) * 100);
+                  return (
+                    <li key={row.entity_id} className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs font-semibold text-slate-800 truncate">{row.entity_name}</p>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <TrendBadge deltaPct={row.delta_pct} />
+                            <p className="text-xs font-bold text-blue-600">{row.period_a_total.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-blue-500 transition-all duration-500"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
