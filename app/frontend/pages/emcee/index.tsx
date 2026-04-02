@@ -75,7 +75,7 @@ const EmceeDashboard: React.FC = () => {
       .then(async ([t, h, s]) => {
         setTeams(t);
         setHosts(h);
-        setSessions(s);
+        setSessions(s.sessions);
 
         const activeT = t.filter((team) => team.active);
         if (activeT.length > 0) {
