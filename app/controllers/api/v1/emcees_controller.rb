@@ -13,12 +13,31 @@ class Api::V1::EmceesController < ApplicationController
     }, status: :ok
   end
 
+  def create
+    emcee = current_company.users.build(emcee_params.merge(role: :emcee))
+
+    if emcee.save
+      render json: {
+        status: { code: 201, message: "Emcee created successfully." },
+        data: emcee_data(emcee)
+      }, status: :created
+    else
+      render json: {
+        status: { code: 422, message: emcee.errors.full_messages.join(", ") }
+      }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def require_admin!
     return if current_user.admin?
 
     render json: { status: 403, message: "Forbidden" }, status: :forbidden
+  end
+
+  def emcee_params
+    params.require(:emcee).permit(:name, :email, :password)
   end
 
   def emcee_data(emcee)

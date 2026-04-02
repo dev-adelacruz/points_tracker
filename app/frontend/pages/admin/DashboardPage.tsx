@@ -7,29 +7,55 @@ import { emceeService } from '../../services/emceeService';
 import { sessionService } from '../../services/sessionService';
 import { reportService } from '../../services/reportService';
 import type { Team } from '../../interfaces/team';
+import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
 
+// ---------------------------------------------------------------------------
+// Greeting helpers
+// ---------------------------------------------------------------------------
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const formatDate = (): string =>
+  new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+// ---------------------------------------------------------------------------
+// DashboardPage
+// ---------------------------------------------------------------------------
 const DashboardPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const userName = useSelector((state: RootState) => state.user.user?.name ?? 'there');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [teams, setTeams] = useState<Team[]>([]);
+  const [hosts, setHosts] = useState<Host[]>([]);
   const [activeHostCount, setActiveHostCount] = useState(0);
   const [emceeCount, setEmceeCount] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
 
+  // New Team modal
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [teamDesc, setTeamDesc] = useState('');
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const [teamSubmitting, setTeamSubmitting] = useState(false);
 
+  // New Host modal
   const [showHostModal, setShowHostModal] = useState(false);
   const [hostName, setHostName] = useState('');
   const [hostEmail, setHostEmail] = useState('');
@@ -37,6 +63,23 @@ const DashboardPage: React.FC = () => {
   const [hostTeamId, setHostTeamId] = useState('');
   const [hostFormError, setHostFormError] = useState<string | null>(null);
   const [hostSubmitting, setHostSubmitting] = useState(false);
+
+  // New Session modal
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [sessionDate, setSessionDate] = useState('');
+  const [sessionSlot, setSessionSlot] = useState<'first' | 'second'>('first');
+  const [sessionTeamId, setSessionTeamId] = useState('');
+  const [sessionHostIds, setSessionHostIds] = useState<number[]>([]);
+  const [sessionFormError, setSessionFormError] = useState<string | null>(null);
+  const [sessionSubmitting, setSessionSubmitting] = useState(false);
+
+  // New Emcee modal
+  const [showEmceeModal, setShowEmceeModal] = useState(false);
+  const [emceeName, setEmceeName] = useState('');
+  const [emceeEmail, setEmceeEmail] = useState('');
+  const [emceePassword, setEmceePassword] = useState('');
+  const [emceeFormError, setEmceeFormError] = useState<string | null>(null);
+  const [emceeSubmitting, setEmceeSubmitting] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -54,6 +97,7 @@ const DashboardPage: React.FC = () => {
     ])
       .then(([t, h, e, s, totals]) => {
         setTeams(t);
+        setHosts(h);
         setActiveHostCount(h.filter((host) => host.active).length);
         setEmceeCount(e.length);
         setSessions(s.sessions);
@@ -63,8 +107,11 @@ const DashboardPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [token]);
 
+  // Modal openers/closers
   const closeTeamModal = useCallback(() => setShowTeamModal(false), []);
   const closeHostModal = useCallback(() => setShowHostModal(false), []);
+  const closeSessionModal = useCallback(() => setShowSessionModal(false), []);
+  const closeEmceeModal = useCallback(() => setShowEmceeModal(false), []);
 
   const openTeamModal = () => {
     setTeamName(''); setTeamDesc(''); setTeamFormError(null);
@@ -76,6 +123,22 @@ const DashboardPage: React.FC = () => {
     setShowHostModal(true);
   };
 
+  const openSessionModal = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setSessionDate(today);
+    setSessionSlot('first');
+    setSessionTeamId('');
+    setSessionHostIds([]);
+    setSessionFormError(null);
+    setShowSessionModal(true);
+  };
+
+  const openEmceeModal = () => {
+    setEmceeName(''); setEmceeEmail(''); setEmceePassword(''); setEmceeFormError(null);
+    setShowEmceeModal(true);
+  };
+
+  // Form handlers
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -93,17 +156,59 @@ const DashboardPage: React.FC = () => {
     if (!token) return;
     setHostSubmitting(true); setHostFormError(null);
     try {
-      await hostService.createHost(token, {
+      const created = await hostService.createHost(token, {
         name: hostName,
         email: hostEmail,
         password: hostPassword,
         ...(hostTeamId ? { team_id: Number(hostTeamId) } : {}),
       });
+      setHosts((prev) => [...prev, created]);
+      setActiveHostCount((prev) => prev + 1);
       closeHostModal();
     } catch (err: any) { setHostFormError(err.message); }
     finally { setHostSubmitting(false); }
   };
 
+  const handleCreateSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSessionSubmitting(true); setSessionFormError(null);
+    try {
+      const created = await sessionService.createSession(token, {
+        date: sessionDate,
+        session_slot: sessionSlot,
+        team_id: Number(sessionTeamId),
+        host_ids: sessionHostIds,
+      });
+      setSessions((prev) => [created, ...prev]);
+      closeSessionModal();
+    } catch (err: any) { setSessionFormError(err.message); }
+    finally { setSessionSubmitting(false); }
+  };
+
+  const handleCreateEmcee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setEmceeSubmitting(true); setEmceeFormError(null);
+    try {
+      await emceeService.createEmcee(token, {
+        name: emceeName,
+        email: emceeEmail,
+        password: emceePassword,
+      });
+      setEmceeCount((prev) => prev + 1);
+      closeEmceeModal();
+    } catch (err: any) { setEmceeFormError(err.message); }
+    finally { setEmceeSubmitting(false); }
+  };
+
+  const toggleSessionHost = (hostId: number) => {
+    setSessionHostIds((prev) =>
+      prev.includes(hostId) ? prev.filter((id) => id !== hostId) : [...prev, hostId]
+    );
+  };
+
+  // Derived data
   const activeTeams = teams.filter((t) => t.active);
   const teamsWithoutEmcee = activeTeams.filter((t) => t.emcee_id === null);
 
@@ -116,6 +221,10 @@ const DashboardPage: React.FC = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
   const topTeams = teamTotals.slice(0, 5);
+
+  const hostsForSelectedTeam = sessionTeamId
+    ? hosts.filter((h) => h.active && h.team_id === Number(sessionTeamId))
+    : [];
 
   const statCards = [
     { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50' },
@@ -140,6 +249,12 @@ const DashboardPage: React.FC = () => {
 
   return (
     <>
+      {/* Greeting Header */}
+      <div className="rounded-2xl bg-gradient-to-r from-teal-600 to-teal-500 px-6 py-5 shadow-sm">
+        <p className="text-lg font-bold text-white">{getGreeting()}, {userName}</p>
+        <p className="text-sm text-teal-100 mt-0.5">{formatDate()}</p>
+      </div>
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(({ label, value, icon: Icon, color, bg }) => (
@@ -158,7 +273,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Actions</p>
         <button
           onClick={openTeamModal}
@@ -171,6 +286,18 @@ const DashboardPage: React.FC = () => {
           className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition-all duration-150"
         >
           + New Host
+        </button>
+        <button
+          onClick={openSessionModal}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+        >
+          + New Session
+        </button>
+        <button
+          onClick={openEmceeModal}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+        >
+          + New Emcee
         </button>
       </div>
 
@@ -366,6 +493,140 @@ const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
             <button type="button" onClick={closeHostModal} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
             <SubmitButton loading={hostSubmitting} label="Create Host" loadingLabel="Creating…" />
+          </div>
+        </form>
+      </Modal>
+
+      {/* New Session Modal */}
+      <Modal open={showSessionModal} onClose={closeSessionModal}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">New Session</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Schedule a new session.</p>
+          </div>
+          <CloseButton onClick={closeSessionModal} />
+        </div>
+        <form onSubmit={handleCreateSession}>
+          <div className="px-6 py-5 space-y-3">
+            {sessionFormError && <FormError message={sessionFormError} />}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Date</label>
+              <input
+                type="date"
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+                required
+                autoFocus
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Session Slot</label>
+              <select
+                value={sessionSlot}
+                onChange={(e) => setSessionSlot(e.target.value as 'first' | 'second')}
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              >
+                <option value="first">Slot 1</option>
+                <option value="second">Slot 2</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Team</label>
+              <select
+                value={sessionTeamId}
+                onChange={(e) => { setSessionTeamId(e.target.value); setSessionHostIds([]); }}
+                required
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              >
+                <option value="">Select a team</option>
+                {activeTeams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            {sessionTeamId && (
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                  Hosts <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                {hostsForSelectedTeam.length === 0 ? (
+                  <p className="text-xs text-slate-400">No active hosts in this team.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {hostsForSelectedTeam.map((h) => (
+                      <label key={h.id} className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={sessionHostIds.includes(h.id)}
+                          onChange={() => toggleSessionHost(h.id)}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="text-xs text-slate-700 group-hover:text-slate-900">{h.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+            <button type="button" onClick={closeSessionModal} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+            <SubmitButton loading={sessionSubmitting} label="Create Session" loadingLabel="Creating…" />
+          </div>
+        </form>
+      </Modal>
+
+      {/* New Emcee Modal */}
+      <Modal open={showEmceeModal} onClose={closeEmceeModal}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">New Emcee</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Add a new emcee to the system.</p>
+          </div>
+          <CloseButton onClick={closeEmceeModal} />
+        </div>
+        <form onSubmit={handleCreateEmcee}>
+          <div className="px-6 py-5 space-y-3">
+            {emceeFormError && <FormError message={emceeFormError} />}
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Name</label>
+              <input
+                type="text"
+                placeholder="Full name"
+                value={emceeName}
+                onChange={(e) => setEmceeName(e.target.value)}
+                required
+                autoFocus
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Email</label>
+              <input
+                type="email"
+                placeholder="emcee@example.com"
+                value={emceeEmail}
+                onChange={(e) => setEmceeEmail(e.target.value)}
+                required
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Password</label>
+              <input
+                type="password"
+                placeholder="Temporary password"
+                value={emceePassword}
+                onChange={(e) => setEmceePassword(e.target.value)}
+                required
+                className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+            <button type="button" onClick={closeEmceeModal} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+            <SubmitButton loading={emceeSubmitting} label="Create Emcee" loadingLabel="Creating…" />
           </div>
         </form>
       </Modal>
