@@ -248,11 +248,20 @@ const DashboardPage: React.FC = () => {
                         {new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         {' · '}
                         {s.session_slot === 'first' ? 'Slot 1' : 'Slot 2'}
+                        {' · '}
+                        {s.host_names.length} host{s.host_names.length !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    <span className="text-[10px] text-slate-400 shrink-0">
-                      {s.host_names.length} host{s.host_names.length !== 1 ? 's' : ''}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`text-xs font-bold ${s.coin_total > 0 ? 'text-teal-600' : 'text-amber-500'}`}>
+                        {s.coin_total.toLocaleString()}
+                      </span>
+                      {s.coin_total > 0 ? (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-600">Logged</span>
+                      ) : (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600">Pending</span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
