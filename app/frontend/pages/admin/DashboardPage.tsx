@@ -10,6 +10,7 @@ import type { Team } from '../../interfaces/team';
 import type { Session } from '../../interfaces/session';
 import type { TeamTotalsRow } from '../../interfaces/teamTotals';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
+import TrendBadge from '../../components/TrendBadge';
 import { Users, UserCheck, Mic, Calendar, AlertTriangle } from 'lucide-react';
 
 const DashboardPage: React.FC = () => {
@@ -23,6 +24,7 @@ const DashboardPage: React.FC = () => {
   const [emceeCount, setEmceeCount] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
+  const [prevTeamTotals, setPrevTeamTotals] = useState<TeamTotalsRow[]>([]);
 
   const [showTeamModal, setShowTeamModal] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -45,19 +47,26 @@ const DashboardPage: React.FC = () => {
     const startOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const todayStr = now.toISOString().split('T')[0];
 
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const prevMonthEnd = new Date(monthStart.getTime() - 24 * 60 * 60 * 1000);
+    const prevMonthStart = new Date(prevMonthEnd.getFullYear(), prevMonthEnd.getMonth(), 1);
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token),
       emceeService.getEmcees(token),
       sessionService.getSessions(token),
       reportService.getTeamTotals(token, startOfMonth, todayStr),
+      reportService.getTeamTotals(token, fmt(prevMonthStart), fmt(prevMonthEnd)),
     ])
-      .then(([t, h, e, s, totals]) => {
+      .then(([t, h, e, s, totals, prevTotals]) => {
         setTeams(t);
         setActiveHostCount(h.filter((host) => host.active).length);
         setEmceeCount(e.length);
         setSessions(s);
         setTeamTotals(totals);
+        setPrevTeamTotals(prevTotals);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
@@ -207,13 +216,20 @@ const DashboardPage: React.FC = () => {
                 {topTeams.map((row, index) => {
                   const maxCoins = topTeams[0].total_coins || 1;
                   const pct = Math.round((row.total_coins / maxCoins) * 100);
+                  const prev = prevTeamTotals.find((p) => p.team_id === row.team_id);
+                  const deltaPct = prev && prev.total_coins > 0
+                    ? ((row.total_coins - prev.total_coins) / prev.total_coins) * 100
+                    : null;
                   return (
                     <li key={row.team_id} className="flex items-center gap-3">
                       <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs font-semibold text-slate-800 truncate">{row.team_name}</p>
-                          <p className="text-xs font-bold text-teal-600 shrink-0 ml-2">{row.total_coins.toLocaleString()}</p>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <TrendBadge deltaPct={deltaPct} />
+                            <p className="text-xs font-bold text-teal-600">{row.total_coins.toLocaleString()}</p>
+                          </div>
                         </div>
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
@@ -221,6 +237,9 @@ const DashboardPage: React.FC = () => {
                             style={{ width: `${pct}%` }}
                           />
                         </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          avg {row.avg_coins_per_host.toLocaleString()} coins/host · {row.host_count} host{row.host_count !== 1 ? 's' : ''}
+                        </p>
                       </div>
                     </li>
                   );
