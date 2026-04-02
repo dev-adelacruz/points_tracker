@@ -11,7 +11,7 @@ namespace :v1 do
     resource :emcee_assignment, only: [ :show, :update, :destroy ], module: "teams"
   end
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
-  resources :emcees, only: [ :index ]
+  resources :emcees, only: [ :index, :create ]
   resources :sessions, only: [ :index, :show, :create ] do
     resources :coin_entries, only: [ :index, :create ], module: "sessions"
   end
