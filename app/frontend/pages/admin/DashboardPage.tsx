@@ -56,7 +56,7 @@ const DashboardPage: React.FC = () => {
         setTeams(t);
         setActiveHostCount(h.filter((host) => host.active).length);
         setEmceeCount(e.length);
-        setSessions(s);
+        setSessions(s.sessions);
         setTeamTotals(totals);
       })
       .catch((err: Error) => setError(err.message))
