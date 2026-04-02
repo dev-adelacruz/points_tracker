@@ -48,7 +48,7 @@ class Api::V1::Reports::PeriodComparisonsController < ApplicationController
       {
         entity_type: "host",
         entity_id: host.id,
-        entity_name: host.email,
+        entity_name: host.name,
         period_a_total: a_total,
         period_b_total: b_total,
         delta: delta,
