@@ -13,8 +13,8 @@ class CoinEntryBlueprint < Blueprinter::Base
     entry.user_id
   end
 
-  field :host_email do |entry|
-    entry.user.email
+  field :host_name do |entry|
+    entry.user.name
   end
 
   field :updated_at do |entry|
