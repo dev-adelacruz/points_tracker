@@ -18,7 +18,7 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
     data = hosts.map do |host|
       total_coins       = CoinEntry.where(user_id: host.id, session_id: session_ids).sum(:coins)
       sessions_attended = CoinEntry.where(user_id: host.id, session_id: session_ids).count
-      quota             = host.monthly_coin_quota
+      quota             = User::MONTHLY_COIN_QUOTA
       quota_progress    = quota.positive? ? (total_coins.to_f / quota * 100).round(1) : 0.0
       paced             = (quota * days_elapsed.to_f / days_in_month).round
       on_track          = total_coins >= paced

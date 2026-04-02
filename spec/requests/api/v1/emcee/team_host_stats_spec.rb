@@ -6,8 +6,8 @@ RSpec.describe "Emcee::TeamHostStats" do
   let(:json_response) { JSON.parse(response.body, symbolize_names: true) }
   let(:emcee) { create(:user, :emcee) }
   let(:other_emcee) { create(:user, :emcee) }
-  let(:host1) { create(:user, :host, monthly_coin_quota: 100_000) }
-  let(:host2) { create(:user, :host, monthly_coin_quota: 80_000) }
+  let(:host1) { create(:user, :host) }
+  let(:host2) { create(:user, :host) }
   let(:team) { create(:team) }
   let(:other_team) { create(:team) }
   let(:session) { create(:session, team: team, created_by: emcee, date: Date.current) }
@@ -44,10 +44,10 @@ RSpec.describe "Emcee::TeamHostStats" do
             expect(data.first[:user_id]).to eq(host1.id)
             expect(data.first[:name]).to eq(host1.name)
             expect(data.first[:total_coins]).to eq(60_000)
-            expect(data.first[:monthly_coin_quota]).to eq(100_000)
-            expect(data.first[:quota_progress]).to eq(60.0)
+            expect(data.first[:monthly_coin_quota]).to eq(300_000)
+            expect(data.first[:quota_progress]).to eq(20.0)
             expect(data.first[:sessions_attended]).to eq(1)
-            expect(data.second[:quota_progress]).to eq(25.0)
+            expect(data.second[:quota_progress]).to eq(6.7)
             expect(data.first).to have_key(:paced_monthly_coins)
             expect(data.first).to have_key(:on_track)
           end
