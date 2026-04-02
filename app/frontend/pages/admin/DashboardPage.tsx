@@ -79,6 +79,7 @@ const DashboardPage: React.FC = () => {
   const [emceeCount, setEmceeCount] = useState(0);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teamTotals, setTeamTotals] = useState<TeamTotalsRow[]>([]);
+  const [prevTeamTotals, setPrevTeamTotals] = useState<TeamTotalsRow[]>([]);
 
   // Period selector — default: This Month
   const [dateRange, setDateRange] = useState<DateRange>(() => buildDateRange('this_month'));
@@ -161,10 +162,12 @@ const DashboardPage: React.FC = () => {
         scope: 'all_hosts',
       }),
       sessionService.getSessions(token, { date_from: prevStart, date_to: prevEnd }),
+      reportService.getTeamTotals(token, prevStart, prevEnd),
     ])
-      .then(([s, totals, comparison, prevSessions]) => {
+      .then(([s, totals, comparison, prevSessions, prevTotals]) => {
         setSessions(s.sessions);
         setTeamTotals(totals);
+        setPrevTeamTotals(prevTotals);
 
         const coinsA = comparison.reduce((sum: number, row: any) => sum + row.period_a_total, 0);
         const coinsB = comparison.reduce((sum: number, row: any) => sum + row.period_b_total, 0);
@@ -430,13 +433,20 @@ const DashboardPage: React.FC = () => {
                 {topTeams.map((row, index) => {
                   const maxCoins = topTeams[0].total_coins || 1;
                   const pct = Math.round((row.total_coins / maxCoins) * 100);
+                  const prev = prevTeamTotals.find((p) => p.team_id === row.team_id);
+                  const deltaPct = prev && prev.total_coins > 0
+                    ? ((row.total_coins - prev.total_coins) / prev.total_coins) * 100
+                    : null;
                   return (
                     <li key={row.team_id} className="flex items-center gap-3">
                       <span className="text-xs font-bold text-slate-400 w-4 shrink-0">{index + 1}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs font-semibold text-slate-800 truncate">{row.team_name}</p>
-                          <p className="text-xs font-bold text-teal-600 shrink-0 ml-2">{row.total_coins.toLocaleString()}</p>
+                          <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                            <TrendBadge deltaPct={deltaPct} />
+                            <p className="text-xs font-bold text-teal-600">{row.total_coins.toLocaleString()}</p>
+                          </div>
                         </div>
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
@@ -444,6 +454,9 @@ const DashboardPage: React.FC = () => {
                             style={{ width: `${pct}%` }}
                           />
                         </div>
+                        <p className="text-[10px] text-slate-400 mt-1">
+                          avg {row.avg_coins_per_host.toLocaleString()} coins/host · {row.host_count} host{row.host_count !== 1 ? 's' : ''}
+                        </p>
                       </div>
                     </li>
                   );
