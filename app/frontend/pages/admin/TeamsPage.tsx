@@ -5,11 +5,13 @@ import { teamService } from '../../services/teamService';
 import type { Team } from '../../interfaces/team';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../context/ToastContext';
 
 const PAGE_SIZE = 10;
 
 const TeamsPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const { showToast } = useToast();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,12 +55,17 @@ const TeamsPage: React.FC = () => {
       if (editingTeam) {
         const updated = await teamService.updateTeam(token, editingTeam.id, { name: formName, description: formDesc || undefined });
         setTeams((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+        showToast({ message: `Team "${updated.name}" updated.`, variant: 'success' });
       } else {
         const created = await teamService.createTeam(token, { name: formName, description: formDesc || undefined });
         setTeams((prev) => [...prev, created]);
+        showToast({ message: `Team "${created.name}" created.`, variant: 'success' });
       }
       closeModal();
-    } catch (err: any) { setFormError(err.message); }
+    } catch (err: any) {
+      setFormError(err.message);
+      showToast({ message: err.message, variant: 'error' });
+    }
     finally { setSubmitting(false); }
   };
 

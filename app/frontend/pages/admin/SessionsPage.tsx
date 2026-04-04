@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { sessionService } from '../../services/sessionService';
@@ -11,11 +11,14 @@ import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../context/ToastContext';
 
 const PAGE_SIZE = 15;
 
 const SessionsPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const { showToast } = useToast();
+  const prevCoinEntriesRef = useRef<{ user_id: number; coins: number }[] | null>(null);
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -113,8 +116,10 @@ const SessionsPage: React.FC = () => {
       });
       closeCreateModal();
       fetchSessions(1);
+      showToast({ message: 'Session created.', variant: 'success' });
     } catch (err: any) {
       setFormError(err.message);
+      showToast({ message: err.message, variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -130,6 +135,7 @@ const SessionsPage: React.FC = () => {
     setCoinError(null);
     setCoinEntries([]);
     setLoadingEntries(true);
+    prevCoinEntriesRef.current = null;
     try {
       const entries = await coinEntryService.getCoinEntries(token, session.id);
       setCoinEntries(entries);
@@ -139,6 +145,10 @@ const SessionsPage: React.FC = () => {
         form[hid] = entry ? String(entry.coins) : '0';
       });
       setCoinsForm(form);
+      prevCoinEntriesRef.current = session.host_ids.map((hid) => {
+        const entry = entries.find((e) => e.user_id === hid);
+        return { user_id: hid, coins: entry ? entry.coins : 0 };
+      });
     } catch (e: any) {
       setCoinError(e.message);
     } finally {
@@ -150,19 +160,44 @@ const SessionsPage: React.FC = () => {
   const handleSaveCoins = async () => {
     if (!token || !selectedSession) return;
     setSavingCoins(true); setCoinError(null);
+    const snapshot = prevCoinEntriesRef.current;
+    const sessionId = selectedSession.id;
+    const hostCount = selectedSession.host_ids.length;
     try {
       const entries = selectedSession.host_ids.map((hid) => ({
         user_id: hid,
         coins: Number(coinsForm[hid] ?? 0),
       }));
-      const saved = await coinEntryService.saveCoinEntries(token, selectedSession.id, entries);
+      const saved = await coinEntryService.saveCoinEntries(token, sessionId, entries);
       const total = saved.reduce((sum, e) => sum + e.coins, 0);
       setSessions((prev) =>
-        prev.map((s) => s.id === selectedSession.id ? { ...s, coin_total: total } : s)
+        prev.map((s) => s.id === sessionId ? { ...s, coin_total: total } : s)
       );
       closeDetailModal();
+      showToast({
+        message: `Coins saved for ${hostCount} host${hostCount !== 1 ? 's' : ''}.`,
+        variant: 'success',
+        duration: 5000,
+        undoLabel: 'Undo',
+        undoDuration: 5000,
+        onUndo: snapshot
+          ? async () => {
+              try {
+                await coinEntryService.saveCoinEntries(token, sessionId, snapshot);
+                const restoredTotal = snapshot.reduce((sum, e) => sum + e.coins, 0);
+                setSessions((prev) =>
+                  prev.map((s) => s.id === sessionId ? { ...s, coin_total: restoredTotal } : s)
+                );
+                showToast({ message: 'Coin entries restored.', variant: 'success' });
+              } catch {
+                showToast({ message: 'Failed to undo. Please try again.', variant: 'error' });
+              }
+            }
+          : undefined,
+      });
     } catch (e: any) {
       setCoinError(e.message);
+      showToast({ message: e.message, variant: 'error' });
     } finally {
       setSavingCoins(false);
     }
