@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
 import Leaderboard from '../../components/Leaderboard';
+import MyPerformanceSection from '../../components/MyPerformanceSection';
 import { hostService } from '../../services/hostService';
 import type { Host } from '../../interfaces/host';
 
@@ -38,6 +39,8 @@ const HostDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <MyPerformanceSection />
 
       {isLoading && (
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-6 py-8">
