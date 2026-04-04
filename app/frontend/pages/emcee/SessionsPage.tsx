@@ -187,25 +187,25 @@ const EmceeSessionsPage: React.FC = () => {
   return (
     <>
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-800">My Sessions</h2>
             <p className="text-xs text-slate-400 mt-0.5">Manage sessions for your assigned teams.</p>
           </div>
           <button
             onClick={openCreateModal}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+            className="text-xs font-semibold px-4 py-3 sm:px-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0"
           >
             + New Session
           </button>
         </div>
 
         {/* Filters */}
-        <div className="px-6 py-3 border-b border-slate-100 flex flex-wrap gap-2">
+        <div className="px-4 sm:px-6 py-3 border-b border-slate-100 flex flex-col sm:flex-row sm:flex-wrap gap-2">
           <select
             value={filterTeamId}
             onChange={(e) => setFilterTeamId(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="text-xs border border-slate-200 rounded-lg px-2.5 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
           >
             <option value="">All Teams</option>
             {activeTeams.map((t) => (
@@ -218,20 +218,20 @@ const EmceeSessionsPage: React.FC = () => {
             type="date"
             value={filterDateFrom}
             onChange={(e) => setFilterDateFrom(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="text-xs border border-slate-200 rounded-lg px-2.5 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
             placeholder="From"
           />
           <input
             type="date"
             value={filterDateTo}
             onChange={(e) => setFilterDateTo(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="text-xs border border-slate-200 rounded-lg px-2.5 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
             placeholder="To"
           />
           <select
             value={filterSlot}
             onChange={(e) => setFilterSlot(e.target.value)}
-            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="text-xs border border-slate-200 rounded-lg px-2.5 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent w-full sm:w-auto"
           >
             <option value="">All Slots</option>
             <option value="first">First Slot</option>

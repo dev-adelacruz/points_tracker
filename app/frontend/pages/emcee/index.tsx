@@ -333,7 +333,7 @@ const EmceeDashboard: React.FC = () => {
         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Quick Actions</p>
         <button
           onClick={openModal}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+          className="text-xs font-semibold px-4 py-3 sm:px-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0"
         >
           + New Session
         </button>
@@ -341,14 +341,14 @@ const EmceeDashboard: React.FC = () => {
 
       {/* Recent Sessions */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-800">Recent Sessions</h2>
             <p className="text-xs text-slate-400 mt-0.5">Last 5 sessions across your teams</p>
           </div>
           <button
             onClick={openModal}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+            className="text-xs font-semibold px-4 py-3 sm:px-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0"
           >
             + New
           </button>
@@ -395,7 +395,7 @@ const EmceeDashboard: React.FC = () => {
                     {isPending && (
                       <button
                         onClick={() => openCoinModal(session)}
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0"
+                        className="text-xs font-semibold px-3 py-3 sm:py-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 active:scale-95 transition-all duration-150 shrink-0 min-h-12 sm:min-h-0"
                       >
                         Log Coins
                       </button>
@@ -423,7 +423,7 @@ const EmceeDashboard: React.FC = () => {
                 <select
                   value={leaderboardTeamId}
                   onChange={(e) => handleTeamChange(Number(e.target.value))}
-                  className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                  className="text-xs border border-slate-200 rounded-lg px-2 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow min-h-12 sm:min-h-0"
                 >
                   {activeTeams.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -439,7 +439,7 @@ const EmceeDashboard: React.FC = () => {
                   <button
                     key={mode}
                     onClick={() => handleFilterMode(mode)}
-                    className={`text-xs px-2.5 py-1.5 font-medium transition-colors ${
+                    className={`text-xs px-2.5 py-3 sm:py-1.5 font-medium transition-colors min-h-12 sm:min-h-0 ${
                       filterMode === mode
                         ? 'bg-teal-600 text-white'
                         : 'bg-white text-slate-600 hover:bg-slate-50'
@@ -454,26 +454,26 @@ const EmceeDashboard: React.FC = () => {
 
           {/* Date range inputs — revealed when Range is active */}
           {filterMode === 'range' && (
-            <div className="flex items-center gap-2 mt-3 flex-wrap">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
               <input
                 type="date"
                 value={rangeFrom}
                 max={rangeTo}
                 onChange={(e) => setRangeFrom(e.target.value)}
-                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                className="text-xs border border-slate-200 rounded-lg px-2 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow w-full sm:w-auto min-h-12 sm:min-h-0"
               />
-              <span className="text-xs text-slate-400">to</span>
+              <span className="text-xs text-slate-400 hidden sm:block">to</span>
               <input
                 type="date"
                 value={rangeTo}
                 min={rangeFrom}
                 max={today}
                 onChange={(e) => setRangeTo(e.target.value)}
-                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                className="text-xs border border-slate-200 rounded-lg px-2 py-3 sm:py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow w-full sm:w-auto min-h-12 sm:min-h-0"
               />
               <button
                 onClick={handleApplyRange}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+                className="text-xs font-semibold px-3 py-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0"
               >
                 Apply
               </button>
@@ -564,14 +564,14 @@ const EmceeDashboard: React.FC = () => {
       {/* Create Session Modal */}
       {showModal && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${isModalVisible ? 'opacity-100' : 'opacity-0'}`}
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 transition-all duration-200 ${isModalVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           <div
             className={`absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-200 ${isModalVisible ? 'opacity-100' : 'opacity-0'}`}
             onClick={closeModal}
           />
           <div
-            className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 ${isModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'}`}
+            className={`relative w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 max-h-[90vh] overflow-y-auto ${isModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 sm:translate-y-3'}`}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
@@ -762,14 +762,14 @@ const EmceeDashboard: React.FC = () => {
       {/* Coin Entry Modal */}
       {showCoinModal && coinSession && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${isCoinModalVisible ? 'opacity-100' : 'opacity-0'}`}
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 transition-all duration-200 ${isCoinModalVisible ? 'opacity-100' : 'opacity-0'}`}
         >
           <div
             className={`absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-200 ${isCoinModalVisible ? 'opacity-100' : 'opacity-0'}`}
             onClick={closeCoinModal}
           />
           <div
-            className={`relative w-full max-w-md bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 ${isCoinModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-3'}`}
+            className={`relative w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 max-h-[90vh] overflow-y-auto ${isCoinModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 sm:translate-y-3'}`}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
