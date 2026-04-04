@@ -86,7 +86,7 @@ const EmceesPage: React.FC = () => {
                         ? <p className="text-xs text-slate-400">{emcee.teams.map((t) => t.name).join(', ')}</p>
                         : <p className="text-xs text-slate-400">No team assigned</p>}
                     </div>
-                    <button onClick={() => openAssign(emcee)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0">Assign Team</button>
+                    <button onClick={() => openAssign(emcee)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Assign Team</button>
                   </li>
                 ))}
               </ul>

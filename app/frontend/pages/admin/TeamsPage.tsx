@@ -87,7 +87,7 @@ const TeamsPage: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-800">Teams</h2>
             <p className="text-xs text-slate-400 mt-0.5">Create, rename, and deactivate teams.</p>
           </div>
-          <button onClick={openCreate} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150">+ New Team</button>
+          <button onClick={openCreate} className="text-xs font-semibold px-4 py-3 sm:px-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0">+ New Team</button>
         </div>
 
         <div className="p-6">
@@ -106,8 +106,8 @@ const TeamsPage: React.FC = () => {
                       {team.emcee_email && <p className="text-xs text-teal-600">Emcee: {team.emcee_email}</p>}
                     </div>
                     <span className="text-xs text-slate-400 shrink-0">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
-                    <button onClick={() => openEdit(team)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0">Edit</button>
-                    <button onClick={() => setConfirmDeactivate(team)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0">Deactivate</button>
+                    <button onClick={() => openEdit(team)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Edit</button>
+                    <button onClick={() => setConfirmDeactivate(team)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Deactivate</button>
                   </li>
                 ))}
               </ul>

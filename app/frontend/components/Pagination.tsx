@@ -33,7 +33,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-3 sm:p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -46,7 +46,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
             <button
               key={p}
               onClick={() => onPageChange(p as number)}
-              className={`min-w-[28px] h-7 rounded-lg text-xs font-medium transition-colors ${
+              className={`min-w-11 min-h-11 sm:min-w-7 sm:min-h-0 sm:h-7 rounded-lg text-xs font-medium transition-colors ${
                 p === currentPage
                   ? 'bg-teal-600 text-white'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -60,7 +60,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-3 sm:p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
         >
           <ChevronRight className="w-3.5 h-3.5" />
