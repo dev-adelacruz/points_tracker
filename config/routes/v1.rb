@@ -27,6 +27,7 @@ namespace :v1 do
   end
 
   namespace :host do
+    resource :quota_stats, only: [ :show ]
     resource :performance, only: [ :show ]
   end
 end

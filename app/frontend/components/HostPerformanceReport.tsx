@@ -5,6 +5,7 @@ import { RootState } from '../state/store';
 import { reportService } from '../services/reportService';
 import { computePresetDates } from '../hooks/useDateRange';
 import type { HostPerformanceReport as ReportData } from '../interfaces/hostPerformance';
+import { downloadCsv } from '../utils/csvExport';
 
 interface HostPerformanceReportProps {
   hostId: number;
@@ -36,12 +37,49 @@ const HostPerformanceReport: React.FC<HostPerformanceReportProps> = ({ hostId, h
       .finally(() => setIsLoading(false));
   }, [token, hostId, startDate, endDate]);
 
+  const handleExportCsv = () => {
+    if (!report) return;
+    const safeName = hostEmail.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const filename = `host_performance_${safeName}_${startDate}_${endDate}.csv`;
+    downloadCsv(filename, [
+      ['Host Performance Report', hostEmail],
+      [`Period: ${startDate} to ${endDate}`, `Total Coins: ${report.monthly_total}`],
+      [],
+      ['Session History'],
+      ['Date', 'Slot', 'Coins', 'Status'],
+      ...report.sessions.map((s) => [
+        s.date,
+        slotLabel(s.session_slot),
+        s.attended ? s.coins : '',
+        s.attended ? 'Attended' : 'Absent',
+      ]),
+      [],
+      ['Daily Totals'],
+      ['Date', 'Coins'],
+      ...report.daily_totals.map((d) => [d.date, d.coins]),
+      [],
+      ['Weekly Totals'],
+      ['Week Start', 'Coins'],
+      ...report.weekly_totals.map((w) => [w.week_start, w.coins]),
+    ]);
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-6 py-4">
-        <h2 className="text-sm font-bold text-slate-900">Host Performance Report</h2>
-        <p className="text-xs text-slate-400 mt-0.5">{hostEmail}</p>
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-6 py-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">Host Performance Report</h2>
+          <p className="text-xs text-slate-400 mt-0.5">{hostEmail}</p>
+        </div>
+        {report && (
+          <button
+            onClick={handleExportCsv}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+          >
+            Export CSV
+          </button>
+        )}
       </div>
 
       {/* Date filter */}

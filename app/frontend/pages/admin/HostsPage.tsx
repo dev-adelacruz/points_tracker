@@ -106,7 +106,7 @@ const HostsPage: React.FC = () => {
             <h2 className="text-sm font-bold text-slate-800">Hosts</h2>
             <p className="text-xs text-slate-400 mt-0.5">Create, edit, and deactivate host accounts.</p>
           </div>
-          <button onClick={openCreate} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150">+ New Host</button>
+          <button onClick={openCreate} className="text-xs font-semibold px-4 py-3 sm:px-3 sm:py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 min-h-12 sm:min-h-0">+ New Host</button>
         </div>
 
         <div className="p-6">
@@ -123,8 +123,8 @@ const HostsPage: React.FC = () => {
                       <p className="text-sm font-semibold text-slate-800 truncate">{host.name}</p>
                       {host.team_name && <p className="text-xs text-slate-400">{host.team_name}</p>}
                     </div>
-                    <button onClick={() => openEdit(host)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0">Edit</button>
-                    <button onClick={() => setConfirmDeactivate(host)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0">Deactivate</button>
+                    <button onClick={() => openEdit(host)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Edit</button>
+                    <button onClick={() => setConfirmDeactivate(host)} className="text-xs font-medium text-red-500 hover:text-red-700 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Deactivate</button>
                   </li>
                 ))}
               </ul>

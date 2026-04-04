@@ -1,5 +1,6 @@
 import type { Host } from '../interfaces/host';
 import type { HostPerformanceReport } from '../interfaces/hostPerformance';
+import type { QuotaStats } from '../interfaces/quotaStats';
 
 class HostService {
   private baseURL = '/api/v1';
@@ -87,6 +88,27 @@ class HostService {
 
     const body = await response.json();
     return body.data as Host;
+  }
+
+  async getQuotaStats(token: string): Promise<QuotaStats> {
+    const response = await fetch(`${this.baseURL}/host/quota_stats`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message || `Failed to fetch quota stats with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as QuotaStats;
   }
 
   async getMyPerformance(
