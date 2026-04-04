@@ -25,4 +25,8 @@ namespace :v1 do
   namespace :emcee do
     resources :team_host_stats, only: [ :index ]
   end
+
+  namespace :host do
+    resource :quota_stats, only: [ :show ]
+  end
 end
