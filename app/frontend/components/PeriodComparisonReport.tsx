@@ -6,6 +6,7 @@ import { reportService } from '../services/reportService';
 import DateRangeFilter from './DateRangeFilter';
 import { computePresetDates } from '../hooks/useDateRange';
 import type { PeriodComparisonRow, PeriodComparisonParams } from '../interfaces/periodComparison';
+import { downloadCsv } from '../utils/csvExport';
 
 interface SortKey {
   field: keyof PeriodComparisonRow;
@@ -106,15 +107,42 @@ const PeriodComparisonReport: React.FC<PeriodComparisonReportProps> = ({
     return <span>{sort.dir === 'asc' ? '↑' : '↓'}</span>;
   };
 
+  const handleExportCsv = () => {
+    const filename = `period_comparison_${periodA.start}_${periodB.end}.csv`;
+    downloadCsv(filename, [
+      ['Period Comparison Report'],
+      [`Period A: ${periodA.start} to ${periodA.end}`, `Period B: ${periodB.start} to ${periodB.end}`],
+      [],
+      ['Host', `Period A (${periodA.start} – ${periodA.end})`, `Period B (${periodB.start} – ${periodB.end})`, 'Delta', 'Delta %'],
+      ...sortedRows.map((r) => [
+        r.entity_name,
+        r.period_a_total,
+        r.period_b_total,
+        r.delta,
+        r.delta_pct ?? '',
+      ]),
+    ]);
+  };
+
   const thClass =
     'px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors';
   const tdClass = 'px-4 py-3 text-sm';
 
   return (
     <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-bold text-slate-900">Period-over-Period Comparison</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Compare total coins across two time periods.</p>
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">Period-over-Period Comparison</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Compare total coins across two time periods.</p>
+        </div>
+        {sortedRows.length > 0 && (
+          <button
+            onClick={handleExportCsv}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+          >
+            Export CSV
+          </button>
+        )}
       </div>
 
       {/* Period pickers */}

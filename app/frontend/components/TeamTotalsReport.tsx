@@ -4,6 +4,7 @@ import { RootState } from '../state/store';
 import { reportService } from '../services/reportService';
 import { computePresetDates } from '../hooks/useDateRange';
 import type { TeamTotalsRow } from '../interfaces/teamTotals';
+import { downloadCsv } from '../utils/csvExport';
 
 type SortField = keyof TeamTotalsRow;
 type SortDir = 'asc' | 'desc';
@@ -58,17 +59,43 @@ const TeamTotalsReport: React.FC = () => {
     return <span>{sort.dir === 'asc' ? '↑' : '↓'}</span>;
   };
 
+  const handleExportCsv = () => {
+    const filename = `team_totals_${startDate}_${endDate}.csv`;
+    downloadCsv(filename, [
+      [`Team Totals Report`, `${startDate} to ${endDate}`],
+      [],
+      ['Team', 'Emcee', 'Total Coins', 'Hosts', 'Avg / Host'],
+      ...sortedRows.map((r) => [
+        r.team_name,
+        r.emcee_email ?? '',
+        r.total_coins,
+        r.host_count,
+        r.avg_coins_per_host,
+      ]),
+    ]);
+  };
+
   const thClass =
     'px-4 py-3 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors';
   const tdClass = 'px-4 py-3 text-sm';
 
   return (
     <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100">
-        <h2 className="text-sm font-bold text-slate-900">Team Totals Report</h2>
-        <p className="text-xs text-slate-400 mt-0.5">
-          Coin totals per team for a selected period.
-        </p>
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">Team Totals Report</h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Coin totals per team for a selected period.
+          </p>
+        </div>
+        {sortedRows.length > 0 && (
+          <button
+            onClick={handleExportCsv}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+          >
+            Export CSV
+          </button>
+        )}
       </div>
 
       {/* Date filter */}
