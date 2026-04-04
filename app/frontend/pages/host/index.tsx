@@ -4,6 +4,7 @@ import { RootState } from '../../state/store';
 import DashboardLayout from '../../components/DashboardLayout';
 import Leaderboard from '../../components/Leaderboard';
 import QuotaProgressBar from '../../components/QuotaProgressBar';
+import MyPerformanceSection from '../../components/MyPerformanceSection';
 import { hostService } from '../../services/hostService';
 import type { Host } from '../../interfaces/host';
 
@@ -41,6 +42,8 @@ const HostDashboard: React.FC = () => {
       </div>
 
       <QuotaProgressBar />
+
+      <MyPerformanceSection />
 
       {isLoading && (
         <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-6 py-8">

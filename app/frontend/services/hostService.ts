@@ -1,4 +1,5 @@
 import type { Host } from '../interfaces/host';
+import type { HostPerformanceReport } from '../interfaces/hostPerformance';
 import type { QuotaStats } from '../interfaces/quotaStats';
 
 class HostService {
@@ -108,6 +109,34 @@ class HostService {
 
     const body = await response.json();
     return body.data as QuotaStats;
+  }
+
+  async getMyPerformance(
+    token: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<HostPerformanceReport> {
+    const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
+
+    const response = await fetch(`${this.baseURL}/host/performance?${query}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message ||
+          `Failed to fetch performance with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as HostPerformanceReport;
   }
 
   async deactivateHost(token: string, id: number): Promise<Host> {
