@@ -338,6 +338,64 @@ const DashboardPage: React.FC = () => {
         <p className="text-sm text-teal-100 mt-0.5">{formatDate()}</p>
       </div>
 
+      {/* Onboarding — shown only when no teams or hosts exist yet */}
+      {!loading && !error && teams.length === 0 && hosts.length === 0 && (
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800">Get started</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Follow these steps to set up your points program.</p>
+          </div>
+          <div className="p-6">
+            <ol className="space-y-4">
+              {[
+                {
+                  step: 1,
+                  label: 'Create your first team',
+                  description: 'Teams group your hosts together for tracking and reporting.',
+                  ctaLabel: '+ New Team',
+                  onCta: openTeamModal,
+                  done: teams.length > 0,
+                },
+                {
+                  step: 2,
+                  label: 'Add hosts',
+                  description: 'Hosts are the people who earn coins each session.',
+                  ctaLabel: '+ New Host',
+                  onCta: openHostModal,
+                  done: hosts.length > 0,
+                },
+                {
+                  step: 3,
+                  label: 'Schedule your first session',
+                  description: 'Sessions are when hosts go live and coins are logged.',
+                  ctaLabel: '+ New Session',
+                  onCta: openSessionModal,
+                  done: false,
+                },
+              ].map(({ step, label, description, ctaLabel, onCta, done }) => (
+                <li key={step} className="flex items-start gap-4">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold ${done ? 'bg-teal-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                    {done ? '✓' : step}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${done ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{label}</p>
+                    {!done && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
+                  </div>
+                  {!done && (
+                    <button
+                      onClick={onCta}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 shrink-0"
+                    >
+                      {ctaLabel}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      )}
+
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map(({ label: cardLabel, value, icon: Icon, color, bg, trend }) => (

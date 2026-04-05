@@ -6,6 +6,8 @@ import type { Team } from '../../interfaces/team';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
+import EmptyState from '../../components/EmptyState';
+import { Users } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -100,7 +102,15 @@ const TeamsPage: React.FC = () => {
         <div className="p-6">
           {loading && <p className="text-sm text-slate-400">Loading...</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}
-          {!loading && !error && teams.length === 0 && <p className="text-sm text-slate-400">No teams yet.</p>}
+          {!loading && !error && teams.length === 0 && (
+            <EmptyState
+              icon={Users}
+              title="No teams yet"
+              description="Teams group your hosts together. Create your first team to get started."
+              ctaLabel="+ Create your first team"
+              onCta={openCreate}
+            />
+          )}
 
           {pagedActive.length > 0 && (
             <>
