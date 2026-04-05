@@ -5,6 +5,34 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
   before_action :authorize_role!
   before_action :set_session
 
+  def previous_session
+    current_slot_value = Session.session_slots[@session.session_slot]
+    prev_session = Session
+      .where(team_id: @session.team_id)
+      .where.not(id: @session.id)
+      .where(
+        "date < ? OR (date = ? AND session_slot < ?)",
+        @session.date, @session.date, current_slot_value
+      )
+      .order(date: :desc, session_slot: :desc)
+      .first
+
+    if prev_session.nil?
+      return render json: {
+        status: { code: 200, message: "No previous session found." },
+        data: [],
+        has_previous: false
+      }, status: :ok
+    end
+
+    entries = prev_session.coin_entries.includes(:user)
+    render json: {
+      status: { code: 200, message: "Previous session entries retrieved." },
+      data: CoinEntryBlueprint.render_as_hash(entries),
+      has_previous: true
+    }, status: :ok
+  end
+
   def index
     entries = @session.coin_entries.includes(:user).order(:user_id)
 
