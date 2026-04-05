@@ -26,10 +26,12 @@
   --color-soft:  #94a3b8;       /* secondary text (slate-400)   */
   --color-ghost: #64748b;       /* muted / placeholder (slate-500) */
 
-  /* ── Status ─────────────────────────────────────────────── */
-  --color-ok:   #22c55e;        /* success (green-500)          */
-  --color-warn: #f59e0b;        /* warning (amber-500)          */
-  --color-bad:  #ef4444;        /* danger  (red-500)            */
+  /* ── Status — 3-state host pacing system (PTRA-97) ─────── */
+  /* Use getHostStatus() + STATUS_BAR/STATUS_BADGE/STATUS_TEXT  */
+  /* or <StatusBadge status={...} /> for consistent rendering.  */
+  --color-ok:   #22c55e;        /* On Track  (green-500)        */
+  --color-warn: #f59e0b;        /* At Risk   (amber-500)        */
+  --color-bad:  #ef4444;        /* Behind    (red-500)          */
 
   /* ── Stat Typography Scale ──────────────────────────────── */
   /* Used for large metric displays on dashboards / stat cards  */
