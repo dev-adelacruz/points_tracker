@@ -15,6 +15,9 @@ const HostDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
+  const [savingNotifications, setSavingNotifications] = useState(false);
+
   useEffect(() => {
     if (!token) return;
 
@@ -23,7 +26,23 @@ const HostDashboard: React.FC = () => {
       .then(setHosts)
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
+
+    hostService
+      .getNotificationSettings(token)
+      .then((s) => setEmailNotificationsEnabled(s.email_notifications_enabled))
+      .catch(() => {});
   }, [token]);
+
+  const handleToggleNotifications = async (enabled: boolean) => {
+    if (!token) return;
+    setSavingNotifications(true);
+    try {
+      const updated = await hostService.updateNotificationSettings(token, enabled);
+      setEmailNotificationsEnabled(updated.email_notifications_enabled);
+    } finally {
+      setSavingNotifications(false);
+    }
+  };
 
   return (
     <DashboardLayout title="Dashboard">
@@ -38,6 +57,25 @@ const HostDashboard: React.FC = () => {
             <p className="text-sm font-semibold text-slate-800">{currentUser?.name}</p>
             <p className="text-xs text-slate-400 capitalize">{currentUser?.role}</p>
           </div>
+        </div>
+
+        <div className="mt-5 pt-5 border-t border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-700">Weekly email digest</p>
+            <p className="text-xs text-slate-400 mt-0.5">Receive a Monday summary of your coins, rank, and quota progress.</p>
+          </div>
+          <button
+            type="button"
+            disabled={savingNotifications}
+            onClick={() => handleToggleNotifications(!emailNotificationsEnabled)}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 ${emailNotificationsEnabled ? 'bg-teal-600' : 'bg-slate-200'}`}
+            role="switch"
+            aria-checked={emailNotificationsEnabled}
+          >
+            <span
+              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${emailNotificationsEnabled ? 'translate-x-4' : 'translate-x-0'}`}
+            />
+          </button>
         </div>
       </div>
 

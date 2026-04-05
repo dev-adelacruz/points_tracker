@@ -1,0 +1,4 @@
+weekly_host_digest:
+  class: SendWeeklyDigestJob
+  schedule: every Monday at 8am Asia/Manila
+  queue: default

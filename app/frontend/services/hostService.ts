@@ -1,4 +1,4 @@
-import type { Host } from '../interfaces/host';
+import type { Host, NotificationSettings } from '../interfaces/host';
 import type { HostPerformanceReport } from '../interfaces/hostPerformance';
 import type { QuotaStats } from '../interfaces/quotaStats';
 
@@ -137,6 +137,54 @@ class HostService {
 
     const body = await response.json();
     return body.data as HostPerformanceReport;
+  }
+
+  async getNotificationSettings(token: string): Promise<NotificationSettings> {
+    const response = await fetch(`${this.baseURL}/host/notification_settings`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message ||
+          `Failed to fetch notification settings with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as NotificationSettings;
+  }
+
+  async updateNotificationSettings(
+    token: string,
+    emailNotificationsEnabled: boolean,
+  ): Promise<NotificationSettings> {
+    const response = await fetch(`${this.baseURL}/host/notification_settings`, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email_notifications_enabled: emailNotificationsEnabled }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message ||
+          `Failed to update notification settings with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as NotificationSettings;
   }
 
   async deactivateHost(token: string, id: number): Promise<Host> {
