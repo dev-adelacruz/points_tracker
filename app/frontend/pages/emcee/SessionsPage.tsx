@@ -52,6 +52,8 @@ const EmceeSessionsPage: React.FC = () => {
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [savingCoins, setSavingCoins] = useState(false);
   const [coinError, setCoinError] = useState<string | null>(null);
+  const [previousEntries, setPreviousEntries] = useState<{ user_id: number; coins: number }[]>([]);
+  const [hasPreviousSession, setHasPreviousSession] = useState(false);
 
   const fetchSessions = useCallback(
     async (page: number) => {
@@ -145,10 +147,15 @@ const EmceeSessionsPage: React.FC = () => {
     setSelectedSession(session);
     setCoinError(null);
     setCoinsForm({});
+    setPreviousEntries([]);
+    setHasPreviousSession(false);
     setLoadingEntries(true);
     prevCoinEntriesRef.current = null;
     try {
-      const entries = await coinEntryService.getCoinEntries(token, session.id);
+      const [entries, prevResult] = await Promise.all([
+        coinEntryService.getCoinEntries(token, session.id),
+        coinEntryService.getPreviousSessionEntries(token, session.id),
+      ]);
       const form: Record<number, string> = {};
       session.host_ids.forEach((hid) => {
         const entry = entries.find((e) => e.user_id === hid);
@@ -159,11 +166,25 @@ const EmceeSessionsPage: React.FC = () => {
         const entry = entries.find((e) => e.user_id === hid);
         return { user_id: hid, coins: entry ? entry.coins : 0 };
       });
+      setHasPreviousSession(prevResult.hasPrevious);
+      setPreviousEntries(prevResult.entries.map((e) => ({ user_id: e.user_id, coins: e.coins })));
     } catch (e: any) {
       setCoinError(e.message);
     } finally {
       setLoadingEntries(false);
     }
+  };
+
+  const handleCopyLastSession = () => {
+    setCoinsForm((prev) => {
+      const updated = { ...prev };
+      previousEntries.forEach(({ user_id, coins }) => {
+        if (updated[user_id] !== undefined) {
+          updated[user_id] = String(coins);
+        }
+      });
+      return updated;
+    });
   };
   const closeCoinModal = useCallback(() => setSelectedSession(null), []);
 
@@ -463,7 +484,17 @@ const EmceeSessionsPage: React.FC = () => {
               )}
               {!loadingEntries && selectedSession.host_ids.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-slate-500 mb-3">Log coins per host</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-medium text-slate-500">Log coins per host</p>
+                    <button
+                      type="button"
+                      onClick={handleCopyLastSession}
+                      disabled={!hasPreviousSession}
+                      className="text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Copy last session
+                    </button>
+                  </div>
                   {selectedSession.host_ids.map((hid, idx) => {
                     const name = selectedSession.host_names[idx] ?? `Host ${hid}`;
                     return (

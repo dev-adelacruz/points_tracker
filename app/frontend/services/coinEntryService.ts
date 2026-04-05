@@ -22,6 +22,28 @@ class CoinEntryService {
     return body.data as CoinEntry[];
   }
 
+  async getPreviousSessionEntries(
+    token: string,
+    sessionId: number
+  ): Promise<{ hasPrevious: boolean; entries: CoinEntry[] }> {
+    const response = await fetch(`${this.baseURL}/sessions/${sessionId}/coin_entries/previous_session`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to fetch previous session entries with status ${response.status}`);
+    }
+
+    const body = await response.json();
+    return { hasPrevious: body.has_previous as boolean, entries: body.data as CoinEntry[] };
+  }
+
   async saveCoinEntries(
     token: string,
     sessionId: number,
