@@ -13,6 +13,7 @@ import { Modal, FormError, SubmitButton, CloseButton } from '../../components/Ad
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
 import CoinStepper from '../../components/CoinStepper';
+import CoinEntryTotal from '../../components/CoinEntryTotal';
 
 const PAGE_SIZE = 15;
 
@@ -479,6 +480,15 @@ const EmceeSessionsPage: React.FC = () => {
               )}
             </div>
             {!loadingEntries && selectedSession.host_ids.length > 0 && (
+              <CoinEntryTotal
+                coinsForm={coinsForm}
+                hostIds={selectedSession.host_ids}
+                sessions={sessions}
+                currentSessionId={selectedSession.id}
+                teamId={selectedSession.team_id}
+              />
+            )}
+            {!loadingEntries && selectedSession.host_ids.length > 0 && (
               <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
                 <button
                   type="button"
@@ -490,7 +500,7 @@ const EmceeSessionsPage: React.FC = () => {
                 <button
                   onClick={handleSaveCoins}
                   disabled={savingCoins}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[110px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-27.5 text-center"
                 >
                   {savingCoins ? 'Saving…' : 'Save Coins'}
                 </button>

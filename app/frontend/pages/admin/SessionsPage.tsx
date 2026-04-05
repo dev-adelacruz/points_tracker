@@ -14,6 +14,7 @@ import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
 import EmptyState from '../../components/EmptyState';
 import CoinStepper from '../../components/CoinStepper';
+import CoinEntryTotal from '../../components/CoinEntryTotal';
 import { Calendar } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -440,6 +441,15 @@ const SessionsPage: React.FC = () => {
                 </div>
               )}
             </div>
+            {!loadingEntries && selectedSession.host_ids.length > 0 && (
+              <CoinEntryTotal
+                coinsForm={coinsForm}
+                hostIds={selectedSession.host_ids}
+                sessions={sessions}
+                currentSessionId={selectedSession.id}
+                teamId={selectedSession.team_id}
+              />
+            )}
             {!loadingEntries && selectedSession.host_ids.length > 0 && (
               <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
                 <button type="button" onClick={closeDetailModal} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
