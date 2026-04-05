@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
@@ -30,8 +30,13 @@ const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const { pathname } = useLocation();
   const handleLogout = () => { dispatch(logoutUser() as any); };
 
+  const activeNavItem = ADMIN_NAV_ITEMS.find(({ to }) =>
+    to === '/admin' ? pathname === '/admin' : pathname.startsWith(to),
+  );
+  const pageTitle = activeNavItem?.label ?? 'Dashboard';
   const initials = user?.name ? user.name.slice(0, 2).toUpperCase() : 'AD';
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : '';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -116,7 +121,7 @@ const AdminLayout: React.FC = () => {
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-sm font-bold text-slate-900 leading-tight">Admin</h1>
+              <h1 className="text-sm font-bold text-slate-900 leading-tight">{pageTitle}</h1>
               <p className="text-[11px] text-slate-400 hidden sm:block">{today}</p>
             </div>
           </div>
