@@ -48,10 +48,10 @@ const statCards = [
     change: '+4.9%',
     up: true,
     icon: TrendingUp,
-    gradient: 'from-sky-500 to-blue-500',
-    shadow: 'shadow-sky-500/20',
-    iconBg: 'bg-sky-500/10',
-    iconColor: 'text-sky-500',
+    gradient: 'from-teal-400 to-teal-600',
+    shadow: 'shadow-teal-500/20',
+    iconBg: 'bg-teal-500/10',
+    iconColor: 'text-teal-500',
   },
 ];
 
@@ -67,7 +67,7 @@ const performanceMetrics = [
   { label: 'Conversion Rate', pct: 68, gradient: 'from-teal-500 to-cyan-400' },
   { label: 'User Retention', pct: 84, gradient: 'from-violet-500 to-purple-600' },
   { label: 'Goal Completion', pct: 52, gradient: 'from-amber-500 to-orange-500' },
-  { label: 'Revenue Target', pct: 79, gradient: 'from-sky-500 to-blue-500' },
+  { label: 'Revenue Target', pct: 79, gradient: 'from-teal-400 to-teal-600' },
 ];
 
 const StatCard: React.FC<typeof statCards[0]> = ({ label, value, change, up, icon: Icon, gradient, shadow, iconBg, iconColor }) => (

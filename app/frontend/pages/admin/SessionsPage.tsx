@@ -264,7 +264,13 @@ const SessionsPage: React.FC = () => {
         </div>
 
         <div className="p-6">
-          {loading && <p className="text-sm text-slate-400">Loading...</p>}
+          {loading && (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           {!loading && !error && sessions.length === 0 && (
             <EmptyState
@@ -443,7 +449,7 @@ const SessionsPage: React.FC = () => {
                 <button
                   onClick={handleSaveCoins}
                   disabled={savingCoins}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-[110px] text-center"
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150 min-w-27.5 text-center"
                 >
                   {savingCoins ? 'Saving…' : 'Save Coins'}
                 </button>
