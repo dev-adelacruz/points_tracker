@@ -39,7 +39,7 @@ const LoginPage: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-900/60">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <span className="text-white text-lg font-bold tracking-tight">AppName</span>
+          <span className="text-white text-lg font-bold tracking-tight">Points Tracker</span>
         </div>
 
         {/* Middle: hero copy */}
@@ -98,7 +98,7 @@ const LoginPage: React.FC = () => {
           <div className="w-8 h-8 rounded-xl bg-teal-600 flex items-center justify-center">
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="text-slate-900 text-base font-bold tracking-tight">AppName</span>
+          <span className="text-slate-900 text-base font-bold tracking-tight">Points Tracker</span>
         </div>
 
         <div className="w-full max-w-sm">
@@ -113,7 +113,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         <p className="mt-12 text-xs text-slate-300">
-          © {new Date().getFullYear()} AppName. All rights reserved.
+          © {new Date().getFullYear()} Points Tracker. All rights reserved.
         </p>
       </div>
     </div>
