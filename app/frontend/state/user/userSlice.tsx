@@ -80,6 +80,12 @@ const userSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null
+    },
+    updateUser: (state, action: { payload: { name?: string; email?: string } }) => {
+      if (state.user) {
+        if (action.payload.name != null) state.user.name = action.payload.name;
+        if (action.payload.email != null) state.user.email = action.payload.email;
+      }
     }
   },
   extraReducers: (builder) => {
@@ -140,5 +146,5 @@ const userSlice = createSlice({
   }
 })
 
-export const { signIn, signOut, clearError } = userSlice.actions;
+export const { signIn, signOut, clearError, updateUser } = userSlice.actions;
 export default userSlice.reducer;

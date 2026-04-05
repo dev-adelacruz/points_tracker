@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
+import { updateUser } from '../../state/user/userSlice';
 import DashboardLayout from '../../components/DashboardLayout';
 import Leaderboard from '../../components/Leaderboard';
 import QuotaProgressBar from '../../components/QuotaProgressBar';
@@ -9,6 +10,7 @@ import { hostService } from '../../services/hostService';
 import type { Host } from '../../interfaces/host';
 
 const HostDashboard: React.FC = () => {
+  const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.user.token);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const [hosts, setHosts] = useState<Host[]>([]);
@@ -18,9 +20,18 @@ const HostDashboard: React.FC = () => {
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [savingNotifications, setSavingNotifications] = useState(false);
 
+  // Profile edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [formCurrentPassword, setFormCurrentPassword] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     if (!token) return;
-
     hostService
       .getHosts(token)
       .then(setHosts)
@@ -44,18 +55,74 @@ const HostDashboard: React.FC = () => {
     }
   };
 
+  const openEditModal = () => {
+    setFormName(currentUser?.name ?? '');
+    setFormEmail(currentUser?.email ?? '');
+    setFormPassword('');
+    setFormCurrentPassword('');
+    setFormError(null);
+    setShowEditModal(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setIsEditModalVisible(true)));
+  };
+
+  const closeEditModal = useCallback(() => {
+    setIsEditModalVisible(false);
+    setTimeout(() => setShowEditModal(false), 220);
+  }, []);
+
+  useEffect(() => {
+    if (!showEditModal) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') closeEditModal(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [showEditModal, closeEditModal]);
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setIsSaving(true);
+    setFormError(null);
+    try {
+      const updated = await hostService.updateProfile(token, {
+        name: formName,
+        email: formEmail,
+        ...(formPassword ? { password: formPassword, current_password: formCurrentPassword } : {}),
+        ...(formEmail !== currentUser?.email && !formPassword ? { current_password: formCurrentPassword } : {}),
+      });
+      dispatch(updateUser({ name: updated.name, email: updated.email }));
+      closeEditModal();
+    } catch (err: any) {
+      setFormError(err.message);
+      setIsSaving(false);
+    }
+  };
+
+  const emailChanging = formEmail !== (currentUser?.email ?? '');
+  const passwordChanging = formPassword.length > 0;
+  const needsCurrentPassword = emailChanging || passwordChanging;
+
   return (
     <DashboardLayout title="Dashboard">
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6">
-        <h2 className="text-sm font-bold text-slate-900">My Profile</h2>
-        <p className="text-xs text-slate-400 mt-0.5">Your account details.</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900">My Profile</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Your account details.</p>
+          </div>
+          <button
+            onClick={openEditModal}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95 transition-all duration-150"
+          >
+            Edit
+          </button>
+        </div>
         <div className="mt-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
             {currentUser?.name?.slice(0, 2).toUpperCase() ?? 'H'}
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-800">{currentUser?.name}</p>
-            <p className="text-xs text-slate-400 capitalize">{currentUser?.role}</p>
+            <p className="text-xs text-slate-400">{currentUser?.email}</p>
           </div>
         </div>
 
@@ -95,6 +162,112 @@ const HostDashboard: React.FC = () => {
       )}
       {!isLoading && !error && (
         <Leaderboard hosts={hosts} currentUserId={currentUser?.id} />
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div
+          className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 transition-all duration-200 ${isEditModalVisible ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <div
+            className={`absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity duration-200 ${isEditModalVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeEditModal}
+          />
+          <div
+            className={`relative w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl ring-1 ring-slate-900/5 transition-all duration-200 max-h-[90vh] overflow-y-auto ${isEditModalVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4 sm:translate-y-3'}`}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Edit Profile</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Update your name, email, or password.</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="px-6 py-5 space-y-4">
+                {formError && (
+                  <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-100 px-3 py-2.5">
+                    <p className="text-xs text-red-600">{formError}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Name</label>
+                  <input
+                    type="text"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    required
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    required
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">New Password <span className="text-slate-400 font-normal">(leave blank to keep current)</span></label>
+                  <input
+                    type="password"
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    autoComplete="new-password"
+                    className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+
+                {needsCurrentPassword && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1.5">Current Password <span className="text-red-500">*</span></label>
+                    <input
+                      type="password"
+                      value={formCurrentPassword}
+                      onChange={(e) => setFormCurrentPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Required when changing email or password.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 pb-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );
