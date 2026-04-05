@@ -1,6 +1,7 @@
 import type { PeriodComparisonRow, PeriodComparisonParams } from '../interfaces/periodComparison';
 import type { TeamTotalsRow } from '../interfaces/teamTotals';
 import type { HostPerformanceReport } from '../interfaces/hostPerformance';
+import type { EmceePerformanceRow } from '../interfaces/emceePerformance';
 
 class ReportService {
   private baseURL = '/api/v1/reports';
@@ -99,6 +100,34 @@ class ReportService {
 
     const body = await response.json();
     return body.data as HostPerformanceReport;
+  }
+
+  async getEmceePerformance(
+    token: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<EmceePerformanceRow[]> {
+    const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
+
+    const response = await fetch(`${this.baseURL}/emcee_performance?${query}`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message ||
+          `Failed to fetch emcee performance with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as EmceePerformanceRow[];
   }
 }
 

@@ -24,6 +24,7 @@ namespace :v1 do
     resource :period_comparison, only: [ :show ]
     resource :team_totals, only: [ :show ]
     resource :host_performance, only: [ :show ]
+    resource :emcee_performance, only: [ :show ]
   end
 
   namespace :emcee do
