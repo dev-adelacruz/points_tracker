@@ -66,6 +66,7 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
 
       if entry.save
         saved << entry
+        HostMailer.coins_logged(entry).deliver_later if entry.user.host? && entry.user.email_notifications_enabled?
       else
         errors << entry.errors.full_messages.join(", ")
       end
