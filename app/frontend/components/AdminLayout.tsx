@@ -15,6 +15,7 @@ const ADMIN_NAV_ITEMS = [
   { label: 'Emcees', icon: Mic, to: '/admin/emcees' },
   { label: 'Sessions', icon: Calendar, to: '/admin/sessions' },
   { label: 'Emcee Performance', icon: BarChart2, to: '/admin/emcee-performance' },
+  { label: 'System Settings', icon: Settings, to: '/admin/system-settings' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {

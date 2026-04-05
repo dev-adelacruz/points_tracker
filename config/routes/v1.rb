@@ -35,4 +35,8 @@ namespace :v1 do
     resource :quota_stats, only: [ :show ]
     resource :performance, only: [ :show ]
   end
+
+  namespace :admin do
+    resources :system_settings, only: [ :show, :update ], param: :key
+  end
 end

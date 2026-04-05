@@ -7,4 +7,5 @@ export interface TeamHostStat {
   sessions_attended: number;
   paced_monthly_coins: number;
   on_track: boolean | null;
+  at_risk: boolean;
 }

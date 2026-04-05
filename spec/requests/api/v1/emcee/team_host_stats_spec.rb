@@ -50,6 +50,7 @@ RSpec.describe "Emcee::TeamHostStats" do
             expect(data.second[:quota_progress]).to eq(6.7)
             expect(data.first).to have_key(:paced_monthly_coins)
             expect(data.first).to have_key(:on_track)
+            expect(data.first).to have_key(:at_risk)
           end
         end
 
