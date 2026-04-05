@@ -12,17 +12,9 @@ import type { Session } from '../../interfaces/session';
 import type { TeamHostStat } from '../../interfaces/teamHostStat';
 import { Users, UserCheck, Calendar, Zap } from 'lucide-react';
 import StatCard from '../../components/StatCard';
-import ProgressRing from '../../components/ProgressRing';
-import StatusBadge from '../../components/StatusBadge';
-import { getHostStatus } from '../../utils/hostStatus';
+import Leaderboard from '../../components/Leaderboard';
 
 type FilterMode = 'today' | 'month' | 'range';
-
-const RANK_COLORS: Record<number, { bg: string; badge: string }> = {
-  1: { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-400 text-white' },
-  2: { bg: 'bg-slate-100 border-slate-200', badge: 'bg-slate-400 text-white' },
-  3: { bg: 'bg-orange-50 border-orange-200', badge: 'bg-orange-400 text-white' },
-};
 
 const EmceeDashboard: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -495,67 +487,11 @@ const EmceeDashboard: React.FC = () => {
               No data for the selected period.
             </p>
           ) : (
-            <ul className="space-y-2">
-              {leaderboardStats.map((stat, index) => {
-                const rank = index + 1;
-                const isTop3 = rank <= 3;
-                const colors = RANK_COLORS[rank];
-
-                return (
-                  <li
-                    key={stat.user_id}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
-                      isTop3 ? colors.bg : 'bg-slate-50 border-slate-100'
-                    }`}
-                  >
-                    {/* Rank badge */}
-                    {isTop3 ? (
-                      <span
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 ${colors.badge}`}
-                      >
-                        {rank}
-                      </span>
-                    ) : (
-                      <span className="w-6 text-xs font-bold text-slate-400 shrink-0 text-center">
-                        {rank}
-                      </span>
-                    )}
-
-                    {/* Name + sessions attended */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs font-semibold text-slate-800 truncate">{stat.name}</p>
-                        {(() => {
-                          const status = getHostStatus(stat);
-                          return status ? <StatusBadge status={status} /> : null;
-                        })()}
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        {stat.sessions_attended} session
-                        {stat.sessions_attended !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-
-                    {/* Coins */}
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-teal-600">
-                        {stat.total_coins.toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-slate-400">coins</p>
-                    </div>
-
-                    {/* Quota progress ring */}
-                    <ProgressRing
-                      value={stat.total_coins}
-                      max={stat.monthly_coin_quota || 1}
-                      size={44}
-                      strokeWidth={4}
-                      label={stat.name}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+            <Leaderboard
+              stats={leaderboardStats}
+              currentUserId={currentUser?.id}
+              bare
+            />
           )}
         </div>
       </div>
