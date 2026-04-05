@@ -9,6 +9,8 @@ import MyPerformanceSection from '../../components/MyPerformanceSection';
 import { hostService } from '../../services/hostService';
 import type { Host } from '../../interfaces/host';
 
+type LeaderboardView = 'all' | 'my_team';
+
 const HostDashboard: React.FC = () => {
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.user.token);
@@ -16,6 +18,7 @@ const HostDashboard: React.FC = () => {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>('all');
 
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [savingNotifications, setSavingNotifications] = useState(false);
@@ -101,6 +104,14 @@ const HostDashboard: React.FC = () => {
   const passwordChanging = formPassword.length > 0;
   const needsCurrentPassword = emailChanging || passwordChanging;
 
+  const currentHostTeamId = hosts.find((h) => h.id === currentUser?.id)?.team_id ?? null;
+  const hasTeam = currentHostTeamId !== null;
+
+  const leaderboardHosts =
+    leaderboardView === 'my_team' && hasTeam
+      ? hosts.filter((h) => h.team_id === currentHostTeamId)
+      : hosts;
+
   return (
     <DashboardLayout title="Dashboard">
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm p-6">
@@ -161,7 +172,47 @@ const HostDashboard: React.FC = () => {
         </div>
       )}
       {!isLoading && !error && (
-        <Leaderboard hosts={hosts} currentUserId={currentUser?.id} />
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                {leaderboardView === 'my_team' ? 'Team Leaderboard' : 'Company Leaderboard'}
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {leaderboardView === 'my_team'
+                  ? 'Hosts on your team.'
+                  : 'All hosts in the company.'}
+              </p>
+            </div>
+
+            {hasTeam && (
+              <div className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-1 shrink-0">
+                <button
+                  onClick={() => setLeaderboardView('all')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    leaderboardView === 'all'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  All Hosts
+                </button>
+                <button
+                  onClick={() => setLeaderboardView('my_team')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    leaderboardView === 'my_team'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  My Team
+                </button>
+              </div>
+            )}
+          </div>
+
+          <Leaderboard bare hosts={leaderboardHosts} currentUserId={currentUser?.id} />
+        </div>
       )}
 
       {/* Edit Profile Modal */}
