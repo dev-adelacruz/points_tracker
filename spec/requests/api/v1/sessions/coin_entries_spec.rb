@@ -225,4 +225,28 @@ RSpec.describe "Sessions::CoinEntries" do
       end
     end
   end
+
+  describe "email notifications" do
+    let(:emcee_token) { Warden::JWTAuth::UserEncoder.new.call(emcee, :user, nil).first }
+
+    it "enqueues a coins_logged email for each host with notifications enabled" do
+      expect do
+        post "/api/v1/sessions/#{session.id}/coin_entries",
+          params: { entries: [ { user_id: host1.id, coins: 10_000 } ] },
+          headers: { "Authorization" => "Bearer #{emcee_token}" },
+          as: :json
+      end.to have_enqueued_mail(HostMailer, :coins_logged)
+    end
+
+    it "does not enqueue an email when host has notifications disabled" do
+      host1.update!(email_notifications_enabled: false)
+
+      expect do
+        post "/api/v1/sessions/#{session.id}/coin_entries",
+          params: { entries: [ { user_id: host1.id, coins: 10_000 } ] },
+          headers: { "Authorization" => "Bearer #{emcee_token}" },
+          as: :json
+      end.not_to have_enqueued_mail(HostMailer, :coins_logged)
+    end
+  end
 end

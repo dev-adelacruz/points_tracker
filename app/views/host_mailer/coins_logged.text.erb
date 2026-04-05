@@ -1,0 +1,13 @@
+Hi <%= @host.name %>,
+
+Your emcee has logged your coins for the following session:
+
+Session:       <%= @session_date %> · <%= @session_slot %>
+Coins Earned:  <%= number_with_delimiter(@coins_earned) %>
+Monthly Total: <%= number_with_delimiter(@monthly_total) %> / 300,000 quota
+
+Keep it up! Log in to your dashboard to see your leaderboard ranking and quota progress.
+
+---
+You're receiving this because your emcee logged coins for your account.
+To stop receiving these notifications, update your preferences in your profile settings.
