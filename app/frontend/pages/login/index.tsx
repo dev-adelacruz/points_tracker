@@ -105,10 +105,7 @@ const LoginPage: React.FC = () => {
           <LoginForm onSuccess={handleLoginSuccess} />
 
           <p className="mt-8 text-center text-sm text-slate-400">
-            Don't have an account?{' '}
-            <button className="font-semibold text-teal-600 hover:text-teal-700 transition-colors duration-150">
-              Contact your administrator
-            </button>
+            Don't have an account? Contact your administrator.
           </p>
         </div>
 
