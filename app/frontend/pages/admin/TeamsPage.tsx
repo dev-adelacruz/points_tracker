@@ -126,7 +126,7 @@ const TeamsPage: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-800 truncate">{team.name}</p>
                       {team.description && <p className="text-xs text-slate-400 truncate">{team.description}</p>}
-                      {team.emcee_email && <p className="text-xs text-teal-600">Emcee: {team.emcee_email}</p>}
+                      {team.emcee_name && <p className="text-xs text-teal-600">Emcee: {team.emcee_name}</p>}
                     </div>
                     <span className="text-xs text-slate-400 shrink-0">{team.host_count} host{team.host_count !== 1 ? 's' : ''}</span>
                     <button onClick={() => openEdit(team)} className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0">Edit</button>

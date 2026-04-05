@@ -11,5 +11,6 @@ export interface Team {
   host_count: number;
   emcee_id: number | null;
   emcee_email: string | null;
+  emcee_name: string | null;
   members: TeamMember[];
 }

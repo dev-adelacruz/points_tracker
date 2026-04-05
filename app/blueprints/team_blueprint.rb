@@ -9,6 +9,10 @@ class TeamBlueprint < Blueprinter::Base
     team.current_emcee&.email
   end
 
+  field :emcee_name do |team|
+    team.current_emcee&.name
+  end
+
   field :emcee_id do |team|
     team.current_emcee&.id
   end
