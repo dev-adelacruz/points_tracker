@@ -12,6 +12,8 @@ import type { Host } from '../../interfaces/host';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
+import EmptyState from '../../components/EmptyState';
+import { Calendar } from 'lucide-react';
 
 const PAGE_SIZE = 15;
 
@@ -265,7 +267,13 @@ const SessionsPage: React.FC = () => {
           {loading && <p className="text-sm text-slate-400">Loading...</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}
           {!loading && !error && sessions.length === 0 && (
-            <p className="text-sm text-slate-400">No sessions found.</p>
+            <EmptyState
+              icon={Calendar}
+              title="No sessions yet"
+              description="Sessions track when hosts go live. Schedule your first session to start logging coins."
+              ctaLabel="+ Schedule your first session"
+              onCta={openCreateModal}
+            />
           )}
 
           {sessions.length > 0 && (

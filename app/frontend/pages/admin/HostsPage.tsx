@@ -8,6 +8,8 @@ import type { Host } from '../../interfaces/host';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
+import EmptyState from '../../components/EmptyState';
+import { UserCheck } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -119,7 +121,15 @@ const HostsPage: React.FC = () => {
         <div className="p-6">
           {loading && <p className="text-sm text-slate-400">Loading...</p>}
           {error && <p className="text-sm text-red-500">{error}</p>}
-          {!loading && !error && hosts.length === 0 && <p className="text-sm text-slate-400">No hosts yet.</p>}
+          {!loading && !error && hosts.length === 0 && (
+            <EmptyState
+              icon={UserCheck}
+              title="No hosts yet"
+              description="Hosts are the people who earn coins each session. Add your first host to begin tracking."
+              ctaLabel="+ Add your first host"
+              onCta={openCreate}
+            />
+          )}
 
           {pagedActive.length > 0 && (
             <>
