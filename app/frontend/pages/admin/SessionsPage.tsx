@@ -13,6 +13,7 @@ import { Modal, FormError, SubmitButton, CloseButton } from '../../components/Ad
 import Pagination from '../../components/Pagination';
 import { useToast } from '../../context/ToastContext';
 import EmptyState from '../../components/EmptyState';
+import CoinStepper from '../../components/CoinStepper';
 import { Calendar } from 'lucide-react';
 
 const PAGE_SIZE = 15;
@@ -428,15 +429,11 @@ const SessionsPage: React.FC = () => {
                     const name = selectedSession.host_names[idx] ?? `Host ${hid}`;
                     return (
                       <div key={hid} className="flex items-center gap-3">
-                        <span className="text-sm text-slate-700 flex-1 truncate">{name}</span>
-                        <input
-                          type="number"
-                          min="0"
+                        <span className="text-sm text-slate-700 flex-1 truncate min-w-0">{name}</span>
+                        <CoinStepper
                           value={coinsForm[hid] ?? '0'}
-                          onChange={(e) => setCoinsForm((prev) => ({ ...prev, [hid]: e.target.value }))}
-                          className="w-28 text-sm border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 text-right focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-shadow"
+                          onChange={(v) => setCoinsForm((prev) => ({ ...prev, [hid]: v }))}
                         />
-                        <span className="text-xs text-slate-400">coins</span>
                       </div>
                     );
                   })}
