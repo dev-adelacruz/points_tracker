@@ -7,11 +7,13 @@ import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import { Modal, FormError, SubmitButton, CloseButton } from '../../components/AdminShared';
 import Pagination from '../../components/Pagination';
+import { useToast } from '../../context/ToastContext';
 
 const PAGE_SIZE = 10;
 
 const HostsPage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
+  const { showToast } = useToast();
 
   const [hosts, setHosts] = useState<Host[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -66,6 +68,7 @@ const HostsPage: React.FC = () => {
           team_id: formTeamId ? Number(formTeamId) : null,
         });
         setHosts((prev) => prev.map((h) => h.id === updated.id ? updated : h));
+        showToast({ message: `Host "${updated.name}" updated.`, variant: 'success' });
       } else {
         const created = await hostService.createHost(token, {
           name: formName,
@@ -74,9 +77,13 @@ const HostsPage: React.FC = () => {
           ...(formTeamId ? { team_id: Number(formTeamId) } : {}),
         });
         setHosts((prev) => [...prev, created]);
+        showToast({ message: `Host "${created.name}" created.`, variant: 'success' });
       }
       closeModal();
-    } catch (err: any) { setFormError(err.message); }
+    } catch (err: any) {
+      setFormError(err.message);
+      showToast({ message: err.message, variant: 'error' });
+    }
     finally { setSubmitting(false); }
   };
 
