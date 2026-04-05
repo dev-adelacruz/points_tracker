@@ -40,4 +40,8 @@ namespace :v1 do
   namespace :admin do
     resources :system_settings, only: [ :show, :update ], param: :key
   end
+
+  namespace :admin do
+    resources :audit_logs, only: [ :index ]
+  end
 end

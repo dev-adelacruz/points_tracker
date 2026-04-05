@@ -15,7 +15,10 @@ class ApplicationController < ActionController::Base
   def authenticate_user!
     unless current_user
       render json: { status: 401, message: "Unauthorized" }, status: :unauthorized
+      return
     end
+
+    Current.user = current_user
   end
 
   def authorize_role!(*roles)

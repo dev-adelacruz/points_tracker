@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Team < ApplicationRecord
+  include Auditable
   belongs_to :company, optional: true
 
   has_many :team_memberships, dependent: :destroy
