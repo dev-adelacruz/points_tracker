@@ -9,8 +9,9 @@
 
 @theme {
   /* ── Brand ─────────────────────────────────────────────── */
-  --color-brand:     #14b8a6;   /* primary teal accent          */
-  --color-brand-dim: #0f766e;   /* hover / muted variant        */
+  --color-brand:       #14b8a6; /* primary teal accent          */
+  --color-brand-dim:   #0f766e; /* hover / dark variant         */
+  --color-brand-light: #ccfbf1; /* tint / bg highlight          */
 
   /* ── Dark Surfaces ──────────────────────────────────────── */
   --color-base:     #0f172a;    /* page background (slate-900)  */
@@ -30,6 +31,14 @@
   --color-ok:   #22c55e;        /* success (green-500)          */
   --color-warn: #f59e0b;        /* warning (amber-500)          */
   --color-bad:  #ef4444;        /* danger  (red-500)            */
+
+  /* ── Type Scale ─────────────────────────────────────────── */
+  /* 5-step semantic scale — use these classes app-wide        */
+  --text-display:    2rem;      /* hero / page-level titles     */
+  --text-heading:    1.25rem;   /* section headings             */
+  --text-subheading: 1rem;      /* card headings                */
+  --text-body:       0.875rem;  /* default prose / lists        */
+  --text-caption:    0.75rem;   /* helper text, labels, meta    */
 
   /* ── Stat Typography Scale ──────────────────────────────── */
   /* Used for large metric displays on dashboards / stat cards  */

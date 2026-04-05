@@ -280,8 +280,8 @@ const EmceeSessionsPage: React.FC = () => {
 
           {!loading && !error && sessions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
-                <Calendar className="w-6 h-6 text-blue-500" />
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center mb-4">
+                <Calendar className="w-6 h-6 text-teal-500" />
               </div>
               <h3 className="text-sm font-bold text-slate-800 mb-1">No sessions yet</h3>
               <p className="text-xs text-slate-400 mb-4">

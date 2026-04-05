@@ -13,9 +13,9 @@ const ACCENT_STYLES = {
     glow: 'rgb(245 158 11 / 0.15)',
   },
   blue: {
-    value: 'text-blue-500',
-    icon: 'text-blue-600 bg-blue-50',
-    glow: 'rgb(59 130 246 / 0.15)',
+    value: 'text-teal-500',
+    icon: 'text-teal-600 bg-teal-50',
+    glow: 'rgb(20 184 166 / 0.15)',
   },
   violet: {
     value: 'text-violet-500',

@@ -310,7 +310,7 @@ const DashboardPage: React.FC = () => {
 
   const statCards = [
     { label: 'Active Teams', value: activeTeams.length, icon: Users, color: 'text-teal-600', bg: 'bg-teal-50', trend: null },
-    { label: 'Active Hosts', value: activeHostCount, icon: UserCheck, color: 'text-blue-600', bg: 'bg-blue-50', trend: null },
+    { label: 'Active Hosts', value: activeHostCount, icon: UserCheck, color: 'text-teal-600', bg: 'bg-teal-50', trend: null },
     { label: 'Active Emcees', value: emceeCount, icon: Mic, color: 'text-violet-600', bg: 'bg-violet-50', trend: null },
     { label: `Sessions · ${label}`, value: sessions.length, icon: Calendar, color: 'text-amber-600', bg: 'bg-amber-50', trend: sessionDeltaPct },
     { label: `Total Coins · ${label}`, value: totalCoins.toLocaleString(), icon: Coins, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: coinDeltaPct },
@@ -580,12 +580,12 @@ const DashboardPage: React.FC = () => {
                           <p className="text-xs font-semibold text-slate-800 truncate">{row.entity_name}</p>
                           <div className="flex items-center gap-1.5 shrink-0 ml-2">
                             <TrendBadge deltaPct={row.delta_pct} />
-                            <p className="text-xs font-bold text-blue-600">{row.period_a_total.toLocaleString()}</p>
+                            <p className="text-xs font-bold text-teal-600">{row.period_a_total.toLocaleString()}</p>
                           </div>
                         </div>
                         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                            className="h-full rounded-full bg-teal-500 transition-all duration-500"
                             style={{ width: `${pct}%` }}
                           />
                         </div>

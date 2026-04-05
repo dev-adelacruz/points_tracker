@@ -100,7 +100,13 @@ const TeamsPage: React.FC = () => {
         </div>
 
         <div className="p-6">
-          {loading && <p className="text-sm text-slate-400">Loading...</p>}
+          {loading && (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-14 rounded-xl bg-slate-100 animate-pulse" />
+              ))}
+            </div>
+          )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           {!loading && !error && teams.length === 0 && (
             <EmptyState
