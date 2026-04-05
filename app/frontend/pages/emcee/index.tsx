@@ -13,6 +13,8 @@ import type { TeamHostStat } from '../../interfaces/teamHostStat';
 import { Users, UserCheck, Calendar, Zap } from 'lucide-react';
 import StatCard from '../../components/StatCard';
 import ProgressRing from '../../components/ProgressRing';
+import StatusBadge from '../../components/StatusBadge';
+import { getHostStatus } from '../../utils/hostStatus';
 
 type FilterMode = 'today' | 'month' | 'range';
 
@@ -521,19 +523,16 @@ const EmceeDashboard: React.FC = () => {
 
                     {/* Name + sessions attended */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-800 truncate">{stat.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-semibold text-slate-800 truncate">{stat.name}</p>
+                        {(() => {
+                          const status = getHostStatus(stat);
+                          return status ? <StatusBadge status={status} /> : null;
+                        })()}
+                      </div>
                       <p className="text-[10px] text-slate-400 mt-0.5">
                         {stat.sessions_attended} session
                         {stat.sessions_attended !== 1 ? 's' : ''}
-                        {stat.on_track !== null && (
-                          <span
-                            className={`ml-1.5 font-medium ${
-                              stat.on_track ? 'text-teal-600' : 'text-amber-500'
-                            }`}
-                          >
-                            · {stat.on_track ? 'On track' : 'Behind'}
-                          </span>
-                        )}
                       </p>
                     </div>
 
