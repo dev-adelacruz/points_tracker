@@ -10,9 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_29_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_05_094508) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "audit_logs", force: :cascade do |t|
+    t.string "action", null: false
+    t.bigint "actor_id", null: false
+    t.bigint "auditable_id", null: false
+    t.string "auditable_label"
+    t.string "auditable_type", null: false
+    t.jsonb "changes_data", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_audit_logs_on_action"
+    t.index ["actor_id"], name: "index_audit_logs_on_actor_id"
+    t.index ["auditable_type", "auditable_id"], name: "index_audit_logs_on_auditable_type_and_auditable_id"
+    t.index ["created_at"], name: "index_audit_logs_on_created_at"
+  end
 
   create_table "coin_entries", force: :cascade do |t|
     t.integer "coins", default: 0, null: false
@@ -113,6 +128,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_29_000002) do
     t.bigint "company_id"
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
+    t.boolean "email_notifications_enabled", default: true, null: false
     t.string "encrypted_password", default: "", null: false
     t.string "jti"
     t.integer "monthly_coin_quota", default: 0, null: false
@@ -130,6 +146,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_29_000002) do
     t.index ["role"], name: "index_users_on_role"
   end
 
+  add_foreign_key "audit_logs", "users", column: "actor_id"
   add_foreign_key "coin_entries", "companies"
   add_foreign_key "coin_entries", "sessions"
   add_foreign_key "coin_entries", "users"

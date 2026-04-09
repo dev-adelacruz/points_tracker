@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Session < ApplicationRecord
+  include Auditable
   belongs_to :company, optional: true
   belongs_to :team
   belongs_to :created_by, class_name: "User"
@@ -19,6 +20,10 @@ class Session < ApplicationRecord
     message: "a session for this date, slot, and team already exists" }
 
   private
+
+  def audit_label
+    "#{team&.name} · #{date&.strftime('%b %-d, %Y')} · #{session_slot&.humanize}"
+  end
 
   def date_cannot_be_in_the_future
     errors.add(:date, "cannot be in the future") if date.present? && date > Date.current

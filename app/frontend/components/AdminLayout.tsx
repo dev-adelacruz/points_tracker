@@ -5,7 +5,7 @@ import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
 import {
   Users, UserCheck, Mic, Calendar, LayoutDashboard,
-  LogOut, Bell, ChevronDown, Zap, Menu, X, Settings, User, BarChart2,
+  LogOut, Bell, ChevronDown, Zap, Menu, X, Settings, User, BarChart2, ClipboardList,
 } from 'lucide-react';
 
 const ADMIN_NAV_ITEMS = [
@@ -16,6 +16,7 @@ const ADMIN_NAV_ITEMS = [
   { label: 'Sessions', icon: Calendar, to: '/admin/sessions' },
   { label: 'Emcee Performance', icon: BarChart2, to: '/admin/emcee-performance' },
   { label: 'System Settings', icon: Settings, to: '/admin/system-settings' },
+  { label: 'Audit Log', icon: ClipboardList, to: '/admin/audit-log' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
