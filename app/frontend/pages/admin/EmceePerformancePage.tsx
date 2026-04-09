@@ -6,7 +6,7 @@ import type { EmceePerformanceRow } from '../../interfaces/emceePerformance';
 import type { DateRange } from '../../interfaces/dateRange';
 import { buildDateRange } from '../../components/PeriodSelector';
 import PeriodSelector from '../../components/PeriodSelector';
-import { Mic } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Mic } from 'lucide-react';
 
 const EmceePerformancePage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -59,8 +59,10 @@ const EmceePerformancePage: React.FC = () => {
   });
 
   const SortIcon = ({ field }: { field: keyof EmceePerformanceRow }) => {
-    if (sortField !== field) return <span className="text-slate-300 ml-1">↕</span>;
-    return <span className="text-teal-500 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
+    if (sortField !== field) return <ArrowUpDown className="inline w-3 h-3 text-slate-300 ml-1" />;
+    return sortDir === 'asc'
+      ? <ArrowUp className="inline w-3 h-3 text-teal-500 ml-1" />
+      : <ArrowDown className="inline w-3 h-3 text-teal-500 ml-1" />;
   };
 
   const thClass = 'px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors';
