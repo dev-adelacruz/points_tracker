@@ -5,7 +5,7 @@ import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
 import {
   LayoutDashboard, Users, Calendar,
-  LogOut, Bell, ChevronDown, Zap, Menu, X, Settings, User,
+  LogOut, Bell, ChevronDown, Zap, Menu, X,
 } from 'lucide-react';
 
 const EMCEE_NAV_ITEMS = [
@@ -144,14 +144,6 @@ const EmceeLayout: React.FC = () => {
                   <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Signed in as</p>
                     <p className="text-sm font-semibold text-slate-800 truncate mt-0.5">{user?.name}</p>
-                  </div>
-                  <div className="py-1">
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <User className="w-4 h-4 text-slate-400 shrink-0" />Profile
-                    </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                      <Settings className="w-4 h-4 text-slate-400 shrink-0" />Settings
-                    </button>
                   </div>
                   <div className="border-t border-slate-100 py-1">
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
