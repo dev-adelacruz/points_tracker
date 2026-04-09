@@ -12,8 +12,9 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
     hosts = @team.users.host.order(:name)
     session_ids = Session.where(team_id: @team.id, date: date_from..date_to).pluck(:id)
 
-    days_elapsed    = Date.current.day
-    days_in_month   = Date.current.end_of_month.day
+    days_elapsed       = Date.current.day
+    days_in_month      = Date.current.end_of_month.day
+    at_risk_threshold  = SystemSetting.get("at_risk_threshold_pct", default: "20").to_f
 
     data = hosts.map do |host|
       total_coins       = CoinEntry.where(user_id: host.id, session_id: session_ids).sum(:coins)
@@ -22,6 +23,7 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
       quota_progress    = quota.positive? ? (total_coins.to_f / quota * 100).round(1) : 0.0
       paced             = (quota * days_elapsed.to_f / days_in_month).round
       on_track          = total_coins >= paced
+      at_risk           = paced.positive? && total_coins < (paced * (1 - at_risk_threshold / 100.0))
 
       {
         user_id:             host.id,
@@ -31,7 +33,8 @@ class Api::V1::Emcee::TeamHostStatsController < ApplicationController
         quota_progress:      quota_progress,
         sessions_attended:   sessions_attended,
         paced_monthly_coins: paced,
-        on_track:            on_track
+        on_track:            on_track,
+        at_risk:             at_risk
       }
     end
 

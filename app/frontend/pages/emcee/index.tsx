@@ -10,7 +10,7 @@ import type { Team } from '../../interfaces/team';
 import type { Host } from '../../interfaces/host';
 import type { Session } from '../../interfaces/session';
 import type { TeamHostStat } from '../../interfaces/teamHostStat';
-import { Users, UserCheck, Calendar, Zap } from 'lucide-react';
+import { Users, UserCheck, Calendar, Zap, AlertTriangle } from 'lucide-react';
 import StatCard from '../../components/StatCard';
 import Leaderboard from '../../components/Leaderboard';
 
@@ -296,6 +296,13 @@ const EmceeDashboard: React.FC = () => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  const atRiskHosts = Object.entries(allTeamStats).flatMap(([teamIdStr, stats]) => {
+    const team = activeTeams.find((t) => t.id === Number(teamIdStr));
+    return stats
+      .filter((s) => s.at_risk)
+      .map((s) => ({ ...s, team_name: team?.name ?? '' }));
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-5">
@@ -495,6 +502,55 @@ const EmceeDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* At Risk Hosts */}
+      {atRiskHosts.length > 0 && (
+        <div className="rounded-2xl bg-white border border-amber-200 shadow-sm overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-amber-100 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-800">At Risk</h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Hosts significantly behind their monthly pace — intervention recommended.
+              </p>
+            </div>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {atRiskHosts.map((host) => {
+              const behind = Math.max(0, host.paced_monthly_coins - host.total_coins);
+              return (
+                <div key={`${host.user_id}-${host.team_name}`} className="flex items-center gap-4 px-4 sm:px-6 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-800 truncate">{host.name}</p>
+                    <p className="text-[10px] text-slate-400">{host.team_name}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold text-amber-600">
+                      {host.total_coins.toLocaleString()} coins
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {behind.toLocaleString()} behind pace
+                    </p>
+                  </div>
+                  <div className="w-20 shrink-0">
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-400 rounded-full"
+                        style={{ width: `${Math.min(host.quota_progress, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5 text-right">
+                      {host.quota_progress}%
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Create Session Modal */}
       {showModal && (

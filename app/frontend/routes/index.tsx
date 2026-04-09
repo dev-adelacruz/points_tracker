@@ -12,6 +12,7 @@ import HostsPage from '../pages/admin/HostsPage';
 import EmceesPage from '../pages/admin/EmceesPage';
 import SessionsPage from '../pages/admin/SessionsPage';
 import EmceePerformancePage from '../pages/admin/EmceePerformancePage';
+import SystemSettingsPage from '../pages/admin/SystemSettingsPage';
 import EmceeDashboard from '../pages/emcee';
 import EmceeSessionsPage from '../pages/emcee/SessionsPage';
 import EmceeTeamsPage from '../pages/emcee/TeamsPage';
@@ -59,6 +60,7 @@ const AppRoutes: React.FC = () => {
           <Route path="emcees" element={<EmceesPage />} />
           <Route path="sessions" element={<SessionsPage />} />
           <Route path="emcee-performance" element={<EmceePerformancePage />} />
+          <Route path="system-settings" element={<SystemSettingsPage />} />
         </Route>
 
         <Route
