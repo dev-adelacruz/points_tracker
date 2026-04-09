@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
@@ -8,9 +9,7 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Profile', icon: User },
-  { label: 'Settings', icon: Settings },
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/host' },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -70,19 +69,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title = 'Da
         </div>
 
         <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ label, icon: Icon }) => {
-            const active = label === title;
-            return (
-              <button
-                key={label}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 text-left border-l-2 pl-[10px] ${active ? 'bg-teal-600/15 text-teal-400 border-teal-500' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100 border-transparent'}`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                {label}
-                {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-400" />}
-              </button>
-            );
-          })}
+          {NAV_ITEMS.map(({ label, icon: Icon, to }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/host'}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 border-l-2 pl-2.5 ${
+                  isActive
+                    ? 'bg-teal-600/15 text-teal-400 border-teal-500'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100 border-transparent'
+                }`
+              }
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="p-3 border-t border-slate-700/50 shrink-0">
