@@ -34,6 +34,7 @@ namespace :v1 do
   namespace :host do
     resource :quota_stats, only: [ :show ]
     resource :performance, only: [ :show ]
+    resource :notification_settings, only: [ :show, :update ]
   end
 
   namespace :admin do

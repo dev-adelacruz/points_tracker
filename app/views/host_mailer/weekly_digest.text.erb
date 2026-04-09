@@ -1,0 +1,16 @@
+Hi <%= @host.name %>,
+
+Here's your weekly Points Tracker summary for <%= @week_label %>:
+
+Coins Last Week:  <%= number_with_delimiter(@coins_last_week) %>
+Monthly Total:    <%= number_with_delimiter(@monthly_total) %> / <%= number_with_delimiter(@monthly_quota) %> quota
+Quota Progress:   <%= @quota_progress %>%
+Leaderboard Rank: #<%= @rank %> of <%= @total_hosts %>
+
+View your dashboard: <%= ENV.fetch('APP_HOST', 'http://localhost:3000') %>/host
+
+Keep it up! Every session brings you closer to your monthly quota.
+
+---
+You're receiving this weekly summary because you're a host on Points Tracker.
+To opt out, turn off email notifications in your profile settings.

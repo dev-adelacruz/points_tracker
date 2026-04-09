@@ -6,3 +6,7 @@ export interface Host {
   team_id: number | null;
   team_name: string | null;
 }
+
+export interface NotificationSettings {
+  email_notifications_enabled: boolean;
+}
