@@ -187,6 +187,31 @@ class HostService {
     return body.data as NotificationSettings;
   }
 
+  async updateProfile(
+    token: string,
+    params: { name?: string; email?: string; password?: string; current_password?: string },
+  ): Promise<{ name: string; email: string }> {
+    const response = await fetch(`${this.baseURL}/host/profile`, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.status?.message || `Failed to update profile with status ${response.status}`,
+      );
+    }
+
+    const body = await response.json();
+    return body.data as { name: string; email: string };
+  }
+
   async deactivateHost(token: string, id: number): Promise<Host> {
     const response = await fetch(`${this.baseURL}/hosts/${id}`, {
       method: 'DELETE',
