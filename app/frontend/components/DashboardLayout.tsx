@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import ErrorBoundary from './ErrorBoundary';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../state/user/userSlice';
 import { RootState } from '../state/store';
@@ -150,7 +151,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title = 'Da
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-5 motion-safe:animate-page-fade">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
