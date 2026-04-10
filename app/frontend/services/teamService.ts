@@ -81,6 +81,25 @@ class TeamService {
     return body.data as Team;
   }
 
+  async reactivateTeam(token: string, id: number): Promise<Team> {
+    const response = await fetch(`${this.baseURL}/teams/${id}/reactivate`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.status?.message || `Failed to reactivate team with status ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data as Team;
+  }
+
   async assignEmcee(token: string, teamId: number, userId: number): Promise<{ team_id: number; emcee_id: number; emcee_email: string }> {
     const response = await fetch(`${this.baseURL}/teams/${teamId}/emcee_assignment`, {
       method: 'PATCH',

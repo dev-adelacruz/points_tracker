@@ -9,6 +9,9 @@ namespace :v1 do
 
   resources :teams, only: [ :index, :create, :update, :destroy ] do
     resource :emcee_assignment, only: [ :show, :update, :destroy ], module: "teams"
+    member do
+      patch :reactivate
+    end
   end
   resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
   resources :emcees, only: [ :index, :create ]

@@ -189,6 +189,51 @@ RSpec.describe "Teams" do
     end
   end
 
+  describe "#reactivate" do
+    let(:inactive_team) { create(:team, active: false) }
+
+    path "/api/v1/teams/{id}/reactivate" do
+      parameter name: :id, in: :path, type: :integer
+
+      patch "reactivates an inactive team (admin only)" do
+        tags "Teams"
+        produces "application/json"
+
+        response(200, "reactivates team for admin") do
+          let(:id) { inactive_team.id }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :ok
+            expect(json_response[:data][:active]).to be true
+            expect(inactive_team.reload.active).to be true
+          end
+        end
+
+        response(404, "returns not found for missing team") do
+          let(:id) { 0 }
+
+          before { sign_in admin }
+
+          run_test! do
+            expect(response).to have_http_status :not_found
+          end
+        end
+
+        response(403, "returns forbidden for emcee") do
+          let(:id) { inactive_team.id }
+
+          before { sign_in emcee }
+
+          run_test! do
+            expect(response).to have_http_status :forbidden
+          end
+        end
+      end
+    end
+  end
+
   describe "#destroy" do
     path "/api/v1/teams/{id}" do
       parameter name: :id, in: :path, type: :integer

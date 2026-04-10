@@ -5,8 +5,8 @@ class Api::V1::TeamsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :authorize_role!
-  before_action :require_admin!, only: [ :create, :update, :destroy ]
-  before_action :set_team, only: [ :update, :destroy ]
+  before_action :require_admin!, only: [ :create, :update, :destroy, :reactivate ]
+  before_action :set_team, only: [ :update, :destroy, :reactivate ]
 
   def index
     render json: {
@@ -47,6 +47,14 @@ class Api::V1::TeamsController < ApplicationController
     @team.deactivate!
     render json: {
       status: { code: 200, message: "Team deactivated successfully." },
+      data: TeamBlueprint.render_as_hash(@team)
+    }, status: :ok
+  end
+
+  def reactivate
+    @team.reactivate!
+    render json: {
+      status: { code: 200, message: "Team reactivated successfully." },
       data: TeamBlueprint.render_as_hash(@team)
     }, status: :ok
   end
