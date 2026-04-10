@@ -183,7 +183,6 @@ const HostDashboard: React.FC = () => {
                   ? 'Hosts on your team.'
                   : 'All hosts in the company.'}
               </p>
-              <p className="text-[11px] text-slate-300 mt-0.5">All-time ranking</p>
             </div>
 
             {!hasTeam && (
