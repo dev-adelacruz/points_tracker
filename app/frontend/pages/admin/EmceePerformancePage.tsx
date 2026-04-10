@@ -6,7 +6,8 @@ import type { EmceePerformanceRow } from '../../interfaces/emceePerformance';
 import type { DateRange } from '../../interfaces/dateRange';
 import { buildDateRange } from '../../components/PeriodSelector';
 import PeriodSelector from '../../components/PeriodSelector';
-import { ArrowDown, ArrowUp, ArrowUpDown, Mic } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, Mic } from 'lucide-react';
+import { downloadCsv } from '../../utils/csvExport';
 
 const EmceePerformancePage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -67,6 +68,21 @@ const EmceePerformancePage: React.FC = () => {
 
   const thClass = 'px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors';
 
+  const handleExport = () => {
+    const headers = ['Emcee', 'Assigned Team(s)', 'Sessions Logged', 'With Coins', '% Completion', 'Last Active'];
+    const csvRows = sorted.map((row) => [
+      row.emcee_name,
+      row.assigned_team_names.join(', '),
+      row.sessions_logged,
+      row.sessions_with_coins,
+      row.completion_pct,
+      row.last_active_at
+        ? new Date(row.last_active_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '',
+    ]);
+    downloadCsv('emcee-performance.csv', [headers, ...csvRows]);
+  };
+
   return (
     <div className="rounded-2xl bg-white border border-slate-100 shadow-sm overflow-hidden">
       <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -74,7 +90,18 @@ const EmceePerformancePage: React.FC = () => {
           <h2 className="text-sm font-bold text-slate-800">Emcee Performance</h2>
           <p className="text-xs text-slate-400 mt-0.5">Sessions logged and coin completion rate per emcee.</p>
         </div>
-        <PeriodSelector value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-2">
+          <PeriodSelector value={dateRange} onChange={setDateRange} />
+          {sorted.length > 0 && (
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && <p className="text-sm text-slate-400 p-6">Loading...</p>}
