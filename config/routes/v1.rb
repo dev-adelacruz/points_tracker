@@ -36,6 +36,7 @@ namespace :v1 do
     resource :performance, only: [ :show ]
     resource :notification_settings, only: [ :show, :update ]
     resource :profile, only: [ :show, :update ]
+    resources :badges, only: [ :index ]
   end
 
   namespace :admin do

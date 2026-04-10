@@ -72,6 +72,8 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
       end
     end
 
+    saved.map(&:user).uniq.select(&:host?).each { |host| BadgeService.evaluate(host) }
+
     if errors.any?
       render json: {
         status: { code: 422, message: errors.join("; ") }

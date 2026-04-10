@@ -7,18 +7,23 @@ import Leaderboard from '../../components/Leaderboard';
 import QuotaProgressBar from '../../components/QuotaProgressBar';
 import MyPerformanceSection from '../../components/MyPerformanceSection';
 import { hostService } from '../../services/hostService';
+import { badgeService } from '../../services/badgeService';
+import { useToast } from '../../context/ToastContext';
 import type { Host } from '../../interfaces/host';
+import type { HostBadge } from '../../interfaces/badge';
 
 type LeaderboardView = 'all' | 'my_team';
 
 const HostDashboard: React.FC = () => {
   const dispatch = useDispatch();
+  const { showToast } = useToast();
   const token = useSelector((state: RootState) => state.user.token);
   const currentUser = useSelector((state: RootState) => state.user.user);
   const [hosts, setHosts] = useState<Host[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>('all');
+  const [badges, setBadges] = useState<HostBadge[]>([]);
 
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(true);
   const [savingNotifications, setSavingNotifications] = useState(false);
@@ -45,6 +50,13 @@ const HostDashboard: React.FC = () => {
       .getNotificationSettings(token)
       .then((s) => setEmailNotificationsEnabled(s.email_notifications_enabled))
       .catch(() => {});
+
+    badgeService.getBadges(token).then(({ data, new_badges }) => {
+      setBadges(data);
+      new_badges.forEach((b) => {
+        showToast({ message: `${b.emoji} Badge earned: ${b.label}!`, variant: 'success', duration: 6000 });
+      });
+    }).catch(() => {});
   }, [token]);
 
   const handleToggleNotifications = async (enabled: boolean) => {
@@ -158,6 +170,29 @@ const HostDashboard: React.FC = () => {
       </div>
 
       <QuotaProgressBar />
+
+      {badges.length > 0 && (
+        <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-6 py-5">
+          <h2 className="text-sm font-bold text-slate-900 mb-3">My Badges</h2>
+          <div className="flex flex-wrap gap-3">
+            {badges.map((b) => (
+              <div
+                key={b.badge_key}
+                title={b.description}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 border border-teal-100"
+              >
+                <span className="text-lg leading-none">{b.emoji}</span>
+                <div>
+                  <p className="text-xs font-semibold text-teal-800">{b.label}</p>
+                  <p className="text-[10px] text-teal-600">
+                    {new Date(b.earned_on).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <MyPerformanceSection />
 

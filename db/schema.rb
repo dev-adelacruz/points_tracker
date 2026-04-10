@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_05_094508) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_10_232416) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_094508) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "host_badges", force: :cascade do |t|
+    t.string "badge_key", null: false
+    t.datetime "created_at", null: false
+    t.date "earned_on", null: false
+    t.boolean "notified", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "badge_key"], name: "index_host_badges_on_user_id_and_badge_key", unique: true
+    t.index ["user_id"], name: "index_host_badges_on_user_id"
   end
 
   create_table "session_hosts", force: :cascade do |t|
@@ -152,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_094508) do
   add_foreign_key "coin_entries", "users"
   add_foreign_key "coin_entry_audits", "coin_entries"
   add_foreign_key "coin_entry_audits", "users", column: "edited_by_id"
+  add_foreign_key "host_badges", "users"
   add_foreign_key "session_hosts", "sessions"
   add_foreign_key "session_hosts", "users"
   add_foreign_key "sessions", "companies"
