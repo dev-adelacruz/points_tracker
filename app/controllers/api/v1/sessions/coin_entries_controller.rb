@@ -66,7 +66,11 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
 
       if entry.save
         saved << entry
-        HostMailer.coins_logged(entry).deliver_later if entry.user.host? && entry.user.email_notifications_enabled?
+
+        if entry.user.host? && entry.user.email_notifications_enabled?
+          HostMailer.coins_logged(entry).deliver_later
+          maybe_send_quota_achieved(entry)
+        end
       else
         errors << entry.errors.full_messages.join(", ")
       end
@@ -85,6 +89,22 @@ class Api::V1::Sessions::CoinEntriesController < ApplicationController
   end
 
   private
+
+  def maybe_send_quota_achieved(entry)
+    host = entry.user
+    session = entry.session
+    month_start = session.date.beginning_of_month
+    month_end   = session.date.end_of_month
+    session_ids = Session.where(date: month_start..month_end).pluck(:id)
+
+    monthly_total = CoinEntry.where(user: host, session_id: session_ids).sum(:coins)
+    return unless monthly_total >= User::MONTHLY_COIN_QUOTA
+
+    previous_total = monthly_total - entry.coins
+    return if previous_total >= User::MONTHLY_COIN_QUOTA
+
+    HostMailer.quota_achieved(host).deliver_later
+  end
 
   def authorize_role!
     super(:admin, :emcee)

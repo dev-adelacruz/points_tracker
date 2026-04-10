@@ -19,6 +19,7 @@ class Api::V1::Host::QuotaStatsController < ApplicationController
     paced          = (quota * days_elapsed.to_f / days_in_month).round
     on_track       = total_coins >= paced
     pacing_delta   = total_coins - paced
+    quota_achieved = total_coins >= quota
 
     render json: {
       status: { code: 200, message: "Quota stats retrieved successfully." },
@@ -28,7 +29,8 @@ class Api::V1::Host::QuotaStatsController < ApplicationController
         quota_progress:      quota_progress,
         paced_monthly_coins: paced,
         on_track:            on_track,
-        pacing_delta:        pacing_delta
+        pacing_delta:        pacing_delta,
+        quota_achieved:      quota_achieved
       }
     }, status: :ok
   end
