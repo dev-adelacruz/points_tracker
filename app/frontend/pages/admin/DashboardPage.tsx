@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../state/store';
 import { teamService } from '../../services/teamService';
@@ -69,6 +70,7 @@ const formatDate = (): string =>
 // DashboardPage
 // ---------------------------------------------------------------------------
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const token = useSelector((state: RootState) => state.user.token);
   const userName = useSelector((state: RootState) => state.user.user?.name ?? 'there');
 
@@ -496,9 +498,17 @@ const DashboardPage: React.FC = () => {
           </div>
           <ul className="space-y-1.5">
             {teamsWithoutEmcee.map((team) => (
-              <li key={team.id} className="flex items-center gap-2 text-xs text-amber-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                <span><span className="font-semibold">{team.name}</span> has no emcee assigned</span>
+              <li key={team.id} className="flex items-center justify-between gap-2 text-xs text-amber-700">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                  <span><span className="font-semibold">{team.name}</span> has no emcee assigned</span>
+                </div>
+                <button
+                  onClick={() => navigate('/admin/teams')}
+                  className="shrink-0 text-[11px] font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-900 transition-colors"
+                >
+                  Go to Teams
+                </button>
               </li>
             ))}
           </ul>
