@@ -34,6 +34,28 @@ const QuotaProgressBar: React.FC = () => {
     return null;
   }
 
+  if (stats.quota_achieved) {
+    return (
+      <div className="rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 shadow-sm px-6 py-5 text-white">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-bold">Monthly Quota</h2>
+            <p className="text-xs text-teal-100 mt-0.5">Resets at the start of each calendar month.</p>
+          </div>
+          <span className="text-xl">🎉</span>
+        </div>
+        <p className="text-2xl font-extrabold">{stats.total_coins.toLocaleString()}</p>
+        <p className="text-sm font-semibold text-teal-100 mt-0.5">
+          Quota Achieved — {stats.monthly_coin_quota.toLocaleString()} coins
+        </p>
+        <div className="mt-3 w-full h-3 bg-white/30 rounded-full overflow-hidden">
+          <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: '100%' }} />
+        </div>
+        <p className="mt-2 text-xs text-teal-100">You've hit your monthly target. Amazing work!</p>
+      </div>
+    );
+  }
+
   const status = getHostStatus({
     on_track: stats.on_track,
     total_coins: stats.total_coins,

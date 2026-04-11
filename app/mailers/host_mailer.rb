@@ -39,6 +39,14 @@ class HostMailer < ApplicationMailer
     mail(to: @host.email, subject: "Your weekly points summary — #{@week_label}")
   end
 
+  def quota_achieved(host)
+    @host = host
+    @quota = User::MONTHLY_COIN_QUOTA
+    @month_label = Date.current.strftime("%B %Y")
+
+    mail(to: @host.email, subject: "🎉 You've hit your monthly quota! — #{@month_label}")
+  end
+
   def coins_logged(coin_entry)
     @coin_entry = coin_entry
     @host = coin_entry.user

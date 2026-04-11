@@ -5,4 +5,5 @@ export interface QuotaStats {
   paced_monthly_coins: number;
   on_track: boolean;
   pacing_delta: number;
+  quota_achieved: boolean;
 }
