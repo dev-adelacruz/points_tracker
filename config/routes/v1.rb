@@ -13,7 +13,11 @@ namespace :v1 do
       patch :reactivate
     end
   end
-  resources :hosts, only: [ :index, :show, :create, :update, :destroy ]
+  resources :hosts, only: [ :index, :show, :create, :update, :destroy ] do
+    member do
+      patch :reactivate
+    end
+  end
   resources :emcees, only: [ :index, :create ]
   resources :sessions, only: [ :index, :show, :create ] do
     resources :coin_entries, only: [ :index, :create ], module: "sessions" do

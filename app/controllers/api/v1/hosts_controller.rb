@@ -5,8 +5,8 @@ class Api::V1::HostsController < ApplicationController
 
   before_action :authenticate_user!
   before_action :authorize_role!
-  before_action :require_admin!, only: [ :create, :update, :destroy ]
-  before_action :set_host, only: [ :show, :update, :destroy ]
+  before_action :require_admin!, only: [ :create, :update, :destroy, :reactivate ]
+  before_action :set_host, only: [ :show, :update, :destroy, :reactivate ]
   before_action -> { authorize_host_access!(@host) }, only: [ :show ]
 
   def index
@@ -67,6 +67,15 @@ class Api::V1::HostsController < ApplicationController
 
     render json: {
       status: { code: 200, message: "Host deactivated successfully." },
+      data: HostBlueprint.render_as_hash(@host)
+    }, status: :ok
+  end
+
+  def reactivate
+    @host.reactivate!
+
+    render json: {
+      status: { code: 200, message: "Host reactivated successfully." },
       data: HostBlueprint.render_as_hash(@host)
     }, status: :ok
   end

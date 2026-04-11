@@ -32,6 +32,7 @@ const HostsPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [confirmDeactivate, setConfirmDeactivate] = useState<Host | null>(null);
+  const [confirmReactivate, setConfirmReactivate] = useState<Host | null>(null);
 
   const [activePage, setActivePage] = useState(1);
   const [inactivePage, setInactivePage] = useState(1);
@@ -98,6 +99,16 @@ const HostsPage: React.FC = () => {
     finally { setConfirmDeactivate(null); }
   };
 
+  const handleReactivate = async (host: Host) => {
+    if (!token) return;
+    try {
+      const updated = await hostService.reactivateHost(token, host.id);
+      setHosts((prev) => prev.map((h) => h.id === updated.id ? updated : h));
+      showToast({ message: `Host "${updated.name}" reactivated.`, variant: 'success' });
+    } catch (err: any) { setError(err.message); }
+    finally { setConfirmReactivate(null); }
+  };
+
   const activeTeams = teams.filter((t) => t.active);
   const activeHosts = hosts.filter((h) => h.active);
   const inactiveHosts = hosts.filter((h) => !h.active);
@@ -160,9 +171,15 @@ const HostsPage: React.FC = () => {
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Inactive</p>
               <ul className="space-y-2">
                 {pagedInactive.map((host) => (
-                  <li key={host.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 opacity-50">
+                  <li key={host.id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-4 py-3 opacity-60">
                     <p className="text-sm font-semibold text-slate-500 line-through flex-1">{host.name}</p>
                     <span className="text-xs text-slate-400">Deactivated</span>
+                    <button
+                      onClick={() => setConfirmReactivate(host)}
+                      className="text-xs font-medium text-teal-600 hover:text-teal-800 shrink-0 min-h-12 sm:min-h-0 px-2 sm:px-0"
+                    >
+                      Reactivate
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -237,6 +254,35 @@ const HostsPage: React.FC = () => {
             <SubmitButton loading={submitting} label={editingHost ? 'Save Changes' : 'Create Host'} loadingLabel="Saving…" />
           </div>
         </form>
+      </Modal>
+
+      {/* Confirm reactivate modal */}
+      <Modal open={!!confirmReactivate} onClose={() => setConfirmReactivate(null)} maxWidth="max-w-sm">
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Reactivate Host</h3>
+              <p className="text-xs text-slate-400 mt-0.5">The host will return to the active roster.</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600">
+            Reactivate <span className="font-semibold text-slate-800">"{confirmReactivate?.name}"</span>? They will appear on the active hosts list again.
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-2xl border-t border-slate-100">
+          <button onClick={() => setConfirmReactivate(null)} className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+          <button
+            onClick={() => confirmReactivate && handleReactivate(confirmReactivate)}
+            className="text-xs font-semibold px-4 py-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 active:scale-95 transition-all duration-150"
+          >
+            Reactivate
+          </button>
+        </div>
       </Modal>
 
       {/* Confirm deactivate modal */}
