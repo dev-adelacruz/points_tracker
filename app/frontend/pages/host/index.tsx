@@ -185,6 +185,12 @@ const HostDashboard: React.FC = () => {
               </p>
             </div>
 
+            {!hasTeam && (
+              <p className="text-xs text-slate-400 italic">
+                You haven't been assigned to a team yet. Contact your administrator.
+              </p>
+            )}
+
             {hasTeam && (
               <div className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-1 shrink-0">
                 <button
