@@ -8,6 +8,9 @@ import { buildDateRange } from '../../components/PeriodSelector';
 import PeriodSelector from '../../components/PeriodSelector';
 import { ArrowDown, ArrowUp, ArrowUpDown, Download, Mic } from 'lucide-react';
 import { downloadCsv } from '../../utils/csvExport';
+import Pagination from '../../components/Pagination';
+
+const PAGE_SIZE = 10;
 
 const EmceePerformancePage: React.FC = () => {
   const token = useSelector((state: RootState) => state.user.token);
@@ -18,6 +21,7 @@ const EmceePerformancePage: React.FC = () => {
   const [sortField, setSortField] = useState<keyof EmceePerformanceRow>('emcee_name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [dateRange, setDateRange] = useState<DateRange>(() => buildDateRange('this_month'));
+  const [page, setPage] = useState(1);
 
   const fetchReport = useCallback(
     async (range: DateRange) => {
@@ -38,6 +42,7 @@ const EmceePerformancePage: React.FC = () => {
 
   useEffect(() => {
     fetchReport(dateRange);
+    setPage(1);
   }, [fetchReport, dateRange]);
 
   const handleSort = (field: keyof EmceePerformanceRow) => {
@@ -47,6 +52,7 @@ const EmceePerformancePage: React.FC = () => {
       setSortField(field);
       setSortDir('asc');
     }
+    setPage(1);
   };
 
   const sorted = [...rows].sort((a, b) => {
@@ -65,6 +71,9 @@ const EmceePerformancePage: React.FC = () => {
       ? <ArrowUp className="inline w-3 h-3 text-teal-500 ml-1" />
       : <ArrowDown className="inline w-3 h-3 text-teal-500 ml-1" />;
   };
+
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const thClass = 'px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors';
 
@@ -141,7 +150,7 @@ const EmceePerformancePage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {sorted.map((row) => (
+              {paginated.map((row) => (
                 <tr key={row.emcee_id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="px-4 py-3 font-medium text-slate-800">{row.emcee_name}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">
@@ -171,6 +180,9 @@ const EmceePerformancePage: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <div className="px-4 sm:px-6 py-3">
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
         </div>
       )}
     </div>
