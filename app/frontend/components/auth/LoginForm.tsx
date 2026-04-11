@@ -18,6 +18,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const displayError = localError || error;
 
@@ -50,6 +51,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <p className="text-sm font-medium">{displayError}</p>
+        </div>
+      )}
+
+      {showForgotPassword && (
+        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-teal-50 border border-teal-200 text-teal-800">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-teal-600" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">Forgot your password?</p>
+            <p className="text-xs text-teal-700 mt-0.5">Please contact your administrator to reset it.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(false)}
+            className="text-teal-500 hover:text-teal-700 transition-colors shrink-0"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -111,7 +130,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
             />
             <span className="text-sm text-slate-600">Remember me</span>
           </label>
-          <button type="button" className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors duration-150">
+          <button
+            type="button"
+            onClick={() => setShowForgotPassword(true)}
+            className="text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors duration-150"
+          >
             Forgot password?
           </button>
         </div>
