@@ -212,6 +212,25 @@ class HostService {
     return body.data as { name: string; email: string };
   }
 
+  async reactivateHost(token: string, id: number): Promise<Host> {
+    const response = await fetch(`${this.baseURL}/hosts/${id}/reactivate`, {
+      method: 'PATCH',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.status?.message || `Failed to reactivate host with status ${response.status}`);
+    }
+
+    const body = await response.json();
+    return body.data as Host;
+  }
+
   async deactivateHost(token: string, id: number): Promise<Host> {
     const response = await fetch(`${this.baseURL}/hosts/${id}`, {
       method: 'DELETE',
