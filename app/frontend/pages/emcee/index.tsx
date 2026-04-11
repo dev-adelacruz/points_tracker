@@ -64,7 +64,7 @@ const EmceeDashboard: React.FC = () => {
     Promise.all([
       teamService.getTeams(token),
       hostService.getHosts(token, { active: true }),
-      sessionService.getSessions(token),
+      sessionService.getSessions(token, { per_page: 20, date_from: startOfMonth, date_to: today }),
     ])
       .then(async ([t, h, s]) => {
         setTeams(t);
